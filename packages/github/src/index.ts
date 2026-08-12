@@ -1,14 +1,3 @@
-export interface GitHubIssue {
-  id: string;
-  number: number;
-  title: string;
-  body: string;
-  state: string;
-}
-
-export function createOctokitClient(auth: string) {
-  return {
-    auth,
-    status: "initialized"
-  };
-}
+export * from "./client.js";
+export * from "./cloner.js";
+export * from "./webhooks.js";

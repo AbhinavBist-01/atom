@@ -1,7 +1,7 @@
-# CLAUDE.md — ATOM Project Summary & Phase 1 Infrastructure
+# CLAUDE.md — ATOM Project Summary & Status
 
 ## 1. Executive Summary & Status
-- **Status**: Phase 1 Complete (Monorepo Scaffolding & Infrastructure)
+- **Status**: Phase 2 Complete (GitHub Integration & Webhook Listener)
 - **Monorepo Manager**: `pnpm` workspaces (`pnpm-workspace.yaml`)
 - **Node Version**: >= 20.0.0
 
@@ -22,11 +22,11 @@ atom/
 │
 ├── apps/
 │   ├── web/                   # Next.js 16 (App Router) + Tailwind CSS Dashboard UI
-│   └── server/                # Express.js API, Better Auth, BullMQ job handlers, Drizzle ORM
+│   └── server/                # Express.js API, Better Auth, Webhook listener, Repos & Issues REST routes
 │
 └── packages/
     ├── core/                  # Shared Zod schemas (Citations, RCA, Runs) & domain types
-    ├── github/                # Octokit client wrapper, Webhook listeners & Git cloner
+    ├── github/                # Octokit REST client, Webhook signature verifier & GitCloner
     ├── parser/                # Tree-sitter AST parser & multi-language chunker
     ├── rag/                   # HyDE, OpenAI Embeddings, pgvector/BM25 & Cohere Reranker
     └── agent/                 # LLM Root Cause Analysis, Patch & Test generation engine
@@ -42,6 +42,7 @@ atom/
 | **Backend** | Express.js, Node.js, Better Auth (GitHub OAuth), Zod |
 | **Database & ORM** | Neon PostgreSQL / pgvector, Drizzle ORM |
 | **Queue & Cache** | Redis 7 + BullMQ |
+| **GitHub Integration** | Octokit REST, `@octokit/webhooks`, `simple-git` |
 | **RAG & Search** | OpenAI `text-embedding-3-small`, BM25, Cohere Rerank v3 |
 | **Code Parsing** | Tree-sitter AST parser (`web-tree-sitter`) |
 
@@ -81,25 +82,29 @@ pnpm docker:down     # Stop local Docker containers
 
 ---
 
-## 5. Phase 1 Accomplishments
+## 5. Phase Accomplishments
 
-1. **Monorepo Setup**: Configured `pnpm-workspace.yaml`, root `package.json`, and `tsconfig.base.json`.
-2. **Package Scaffolding**:
-   - `@atom/core`: Domain models & Zod schemas (`CitationSchema`, `RcaResultSchema`).
-   - `@atom/github`: Octokit REST API wrapper & Git integration stub.
-   - `@atom/parser`: Tree-sitter AST code parsing & metadata chunking structure.
-   - `@atom/rag`: RAG helper utilities including Reciprocal Rank Fusion (`reciprocalRankFusion`).
-   - `@atom/agent`: Issue analysis & root cause analysis engine baseline.
-3. **Application Baseline**:
-   - `apps/server`: Express application bootstrap with Drizzle ORM PostgreSQL schema (`repositories`, `chunks`, `issues`, `runs`, `rca_results`, `citations`) and `drizzle.config.ts`.
-   - `apps/web`: Next.js 16 App Router application with Tailwind CSS dark-mode dashboard UI.
-4. **Environment & Local Services**:
-   - Configured `docker-compose.yml` for PostgreSQL 16 (with `pgvector`) and Redis 7.
-   - Created `.env.example` with documented environment variable requirements.
+### Phase 1 — Monorepo & Infrastructure
+- Scaffolding of workspace layout (`apps/*`, `packages/*`), root configuration, Docker setup (pgvector + Redis), and Drizzle ORM database schema.
+
+### Phase 2 — GitHub API Integration & Webhook Listener
+1. **GitHub Package (`@atom/github`)**:
+   - `AtomGitHubClient`: Octokit REST API wrapper to fetch issue details, commit history, and directory file trees.
+   - `GitCloner`: Shallow repo cloning module with `simple-git` and git blame line inspection.
+   - `GitHubWebhookHandler`: Webhook signature verification (`x-hub-signature-256`) and issue event parser.
+2. **Server Services (`apps/server`)**:
+   - `Better Auth` setup with GitHub OAuth social provider integration (`src/auth.ts`).
+   - Webhook Endpoint (`POST /webhooks/github`): Verified event receiver for issue lifecycle events.
+   - Repos API Router (`GET /api/repos`, `POST /api/repos`): Repository management and connection.
+   - Issues API Router (`GET /api/issues/:owner/:repo/:number`, `POST /api/issues/:owner/:repo/:number/run`): Issue retrieval & agent run trigger.
 
 ---
 
-## 6. Next Steps (Phase 2 & Beyond)
+## 6. Next Steps (Phase 3 & Beyond)
 
-1. **Phase 2 — GitHub Integration**: Set up GitHub OAuth with Better Auth, Octokit REST client, webhook handlers (`issues.*`, `push`, `pull_request.*`), and `simple-git` cloning module.
-2. **Phase 3 — Parsing & Indexing**: Integrate Tree-sitter parsers, extract functions/classes AST nodes, tag git blame commit hashes, generate embeddings, and populate pgvector + BM25 search indices.
+1. **Phase 3 — Code Parsing & Hybrid Indexing Pipeline**:
+   - Multi-language AST parsing using Tree-sitter (TS, JS, Python, Go, Rust, Java).
+   - Smart semantic chunker (function/class level node extraction).
+   - Git blame commit hash tagging per chunk.
+   - Batch OpenAI embeddings generation + pgvector upsert & BM25 sparse index update via BullMQ `indexRepo` job queue.
+
