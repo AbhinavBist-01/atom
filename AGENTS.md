@@ -155,7 +155,7 @@ Each Chunk -> { content, filePath, startLine, endLine, nodeType, lang, gitBlameC
 | ------------ | ----------------------------- |
 | Completion   | OpenAI gpt-4o / o3-mini       |
 | Embeddings   | OpenAI text-embedding-3-small |
-| Reranker     | Cohere rerank-english-v3.0    |
+| Reranker     | Reciprocal Rank Fusion (RRF)       |
 | Output Shape | OpenAI JSON mode + Zod schema |
 
 ### Infra & Tooling

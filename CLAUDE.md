@@ -44,7 +44,7 @@ atom/
 | **Vector Database** | Pinecone Vector DB (`@pinecone-database/pinecone`) |
 | **Queue & Cache** | Redis 7 + BullMQ |
 | **GitHub Integration** | Octokit REST, `@octokit/webhooks`, `simple-git` |
-| **RAG & Search** | OpenAI `text-embedding-3-small`, Pinecone + BM25, Cohere Rerank v3 |
+| **RAG & Reranking** | OpenAI `text-embedding-3-small`, Pinecone + BM25, Reciprocal Rank Fusion (RRF) |
 | **Code Parsing** | Tree-sitter AST parser (`web-tree-sitter`) |
 
 ---
