@@ -85,7 +85,23 @@ pnpm docker:down     # Stop local Docker containers
 ## 5. Phase Accomplishments
 
 ### Phase 1 — Monorepo & Infrastructure
-- Scaffolding of workspace layout (`apps/*`, `packages/*`), root configuration, Docker setup (pgvector + Redis), and Drizzle ORM database schema.
+1. **Monorepo Setup**:
+   - `pnpm-workspace.yaml` defining `apps/*` and `packages/*` workspace roots.
+   - Root `package.json` with granular scripts (`dev`, `dev:web`, `dev:server`, `build`, `db:*`, `docker:*`).
+   - `tsconfig.base.json` shared TypeScript config with `composite` + `declaration` for project references.
+2. **Package Scaffolding** (5 packages):
+   - `@atom/core`: Zod schemas (`CitationSchema`, `RcaResultSchema`) and shared TypeScript types.
+   - `@atom/github`: Octokit client stub and GitHub integration placeholder.
+   - `@atom/parser`: Tree-sitter code parsing and `CodeChunk` type definitions.
+   - `@atom/rag`: Reciprocal Rank Fusion (`reciprocalRankFusion`) utility for hybrid search merging.
+   - `@atom/agent`: Issue analysis engine baseline with `analyzeIssue()` stub.
+3. **Application Baseline** (2 apps):
+   - `apps/server`: Express.js entry point with health check, Drizzle ORM schema defining 6 tables (`repositories`, `chunks`, `issues`, `runs`, `rca_results`, `citations`), and `drizzle.config.ts`.
+   - `apps/web`: Next.js App Router with Tailwind CSS dark-mode dashboard, `layout.tsx`, and `page.tsx` home view.
+4. **Infrastructure & Environment**:
+   - `docker-compose.yml`: PostgreSQL 16 (`pgvector/pgvector:pg16`) + Redis 7 Alpine containers.
+   - `.env.example`: Documented template for GitHub, Better Auth, OpenAI, Cohere, Postgres, and Redis keys.
+   - `.gitignore`: Configured to exclude `**/dist/`, `*.tsbuildinfo`, `node_modules/`, `.next/`, and `.env` files.
 
 ### Phase 2 — GitHub API Integration & Webhook Listener
 1. **GitHub Package (`@atom/github`)**:
