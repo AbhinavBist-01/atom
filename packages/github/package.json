@@ -1,0 +1,19 @@
+{
+  "name": "@atom/github",
+  "version": "0.1.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsc -b --watch"
+  },
+  "dependencies": {
+    "@atom/core": "workspace:*",
+    "@octokit/rest": "^21.1.0",
+    "@octokit/webhooks": "^13.8.0",
+    "simple-git": "^3.27.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

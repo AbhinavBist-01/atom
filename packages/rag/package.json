@@ -1,0 +1,20 @@
+{
+  "name": "@atom/rag",
+  "version": "0.1.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsc -b --watch"
+  },
+  "dependencies": {
+    "@atom/core": "workspace:*",
+    "@pinecone-database/pinecone": "^4.0.0",
+    "cohere-ai": "^7.15.0",
+    "openai": "^4.83.0",
+    "wink-bm25-text-search": "^3.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

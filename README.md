@@ -84,6 +84,7 @@ Vector Search
 ├──────────────► BM25 Search
 │ │
 └──────────┬──────────┘
+
 ▼
 Hybrid Retrieval
 │
