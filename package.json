@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm --parallel --filter \"@atom/*\" dev",
     "dev:web": "pnpm --filter @atom/web dev",
-    "dev:server": "pnpm --filter @atom/server dev",
+    "dev:server": "pnpm build:packages && pnpm --filter @atom/server dev",
     "build": "pnpm --filter \"./packages/*\" build && pnpm --filter \"./apps/*\" build",
     "build:packages": "pnpm --filter \"./packages/*\" build",
     "build:web": "pnpm --filter @atom/web build",
