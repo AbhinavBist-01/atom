@@ -1,4 +1,5 @@
 import { Octokit } from "@octokit/rest";
+import { createAppAuth } from "@octokit/auth-app";
 
 export interface RepoRef {
   owner: string;
@@ -22,11 +23,28 @@ export interface CommitInfo {
   date: string;
 }
 
+export interface GitHubAppAuthConfig {
+  appId: string;
+  privateKey: string;
+  installationId?: string;
+}
+
 export class AtomGitHubClient {
   private octokit: Octokit;
 
-  constructor(token?: string) {
-    this.octokit = new Octokit({ auth: token });
+  constructor(config?: { token?: string; appAuth?: GitHubAppAuthConfig }) {
+    if (config?.appAuth && config.appAuth.appId && config.appAuth.privateKey) {
+      this.octokit = new Octokit({
+        authStrategy: createAppAuth,
+        auth: {
+          appId: config.appAuth.appId,
+          privateKey: config.appAuth.privateKey,
+          installationId: config.appAuth.installationId
+        }
+      });
+    } else {
+      this.octokit = new Octokit({ auth: config?.token });
+    }
   }
 
   async getIssue(ref: RepoRef, issueNumber: number): Promise<IssueDetails> {
@@ -44,6 +62,31 @@ export class AtomGitHubClient {
       author: data.user?.login || "unknown",
       labels: data.labels.map((l) => (typeof l === "string" ? l : l.name || "")),
       createdAt: data.created_at
+    };
+  }
+
+  async createIssueComment(ref: RepoRef, issueNumber: number, body: string): Promise<void> {
+    await this.octokit.issues.createComment({
+      owner: ref.owner,
+      repo: ref.repo,
+      issue_number: issueNumber,
+      body
+    });
+  }
+
+  async createPullRequest(ref: RepoRef, title: string, head: string, base: string, body: string): Promise<{ number: number; url: string }> {
+    const { data } = await this.octokit.pulls.create({
+      owner: ref.owner,
+      repo: ref.repo,
+      title,
+      head,
+      base,
+      body
+    });
+
+    return {
+      number: data.number,
+      url: data.html_url
     };
   }
 

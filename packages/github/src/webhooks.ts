@@ -16,6 +16,23 @@ export interface GitHubIssueEventPayload {
     name: string;
     full_name: string;
   };
+  installation?: {
+    id: number;
+  };
+}
+
+export interface GitHubInstallationEventPayload {
+  action: string;
+  installation: {
+    id: number;
+    account: {
+      login: string;
+    };
+  };
+  repositories?: Array<{
+    name: string;
+    full_name: string;
+  }>;
 }
 
 export class GitHubWebhookHandler {
@@ -29,10 +46,19 @@ export class GitHubWebhookHandler {
     return this.webhooks.verify(payload, signature);
   }
 
-  parsePayload(payload: any): { eventType: string; issuePayload?: GitHubIssueEventPayload } {
+  parsePayload(payload: any): {
+    eventType: string;
+    issuePayload?: GitHubIssueEventPayload;
+    installationPayload?: GitHubInstallationEventPayload;
+  } {
+    if (payload.issue) {
+      return { eventType: "issues", issuePayload: payload as GitHubIssueEventPayload };
+    }
+    if (payload.installation && (payload.action === "created" || payload.action === "deleted")) {
+      return { eventType: "installation", installationPayload: payload as GitHubInstallationEventPayload };
+    }
     return {
-      eventType: payload.issue ? "issues" : payload.pull_request ? "pull_request" : "unknown",
-      issuePayload: payload.issue ? (payload as GitHubIssueEventPayload) : undefined
+      eventType: payload.pull_request ? "pull_request" : payload.commits ? "push" : "unknown"
     };
   }
 }

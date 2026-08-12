@@ -19,10 +19,12 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
     }
   }
 
-  const { eventType, issuePayload } = handler.parsePayload(req.body);
+  const { eventType, issuePayload, installationPayload } = handler.parsePayload(req.body);
 
   if (eventType === "issues" && issuePayload) {
-    console.log(`[Webhook] Received issue event '${issuePayload.action}' for #${issuePayload.issue.number}: ${issuePayload.issue.title}`);
+    console.log(`[GitHub App Webhook] Received issue event '${issuePayload.action}' for #${issuePayload.issue.number}: ${issuePayload.issue.title}`);
+  } else if (eventType === "installation" && installationPayload) {
+    console.log(`[GitHub App Webhook] GitHub App installation event '${installationPayload.action}' for account '${installationPayload.installation.account.login}' (Installation ID: ${installationPayload.installation.id})`);
   }
 
   res.json({ received: true, event: event || eventType });

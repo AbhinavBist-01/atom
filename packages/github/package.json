@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@atom/core": "workspace:*",
+    "@octokit/auth-app": "^7.1.5",
     "@octokit/rest": "^21.1.0",
     "@octokit/webhooks": "^13.8.0",
     "simple-git": "^3.27.0"
