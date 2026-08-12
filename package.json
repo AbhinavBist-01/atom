@@ -4,19 +4,27 @@
   "version": "0.1.0",
   "description": "ATOM: Autonomous GitHub Issue Resolution Agent",
   "scripts": {
-    "dev": "pnpm --recursive run dev",
-    "build": "pnpm --recursive run build",
+    "dev": "pnpm --parallel --filter \"@atom/*\" dev",
+    "dev:web": "pnpm --filter @atom/web dev",
+    "dev:server": "pnpm --filter @atom/server dev",
+    "build": "pnpm --filter \"./packages/*\" build && pnpm --filter \"./apps/*\" build",
+    "build:packages": "pnpm --filter \"./packages/*\" build",
+    "build:web": "pnpm --filter @atom/web build",
+    "build:server": "pnpm --filter @atom/server build",
     "lint": "pnpm --recursive run lint",
     "test": "vitest run",
-    "db:generate": "pnpm --filter server db:generate",
-    "db:migrate": "pnpm --filter server db:migrate",
-    "db:push": "pnpm --filter server db:push"
+    "db:generate": "pnpm --filter @atom/server db:generate",
+    "db:migrate": "pnpm --filter @atom/server db:migrate",
+    "db:push": "pnpm --filter @atom/server db:push",
+    "db:studio": "pnpm --filter @atom/server db:studio",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
   },
   "devDependencies": {
-    "typescript": "^5.7.3",
-    "vitest": "^3.0.5",
+    "eslint": "^9.19.0",
     "prettier": "^3.4.2",
-    "eslint": "^9.19.0"
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
   },
   "engines": {
     "node": ">=20.0.0"

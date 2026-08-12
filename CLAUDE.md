@@ -53,21 +53,30 @@ atom/
 # Install dependencies across all workspace packages
 pnpm install
 
-# Run dev mode (concurrent for apps & packages)
-pnpm dev
+# Development
+pnpm dev             # Run server and web app concurrently in parallel
+pnpm dev:web         # Run Next.js frontend only
+pnpm dev:server      # Run Express backend only
 
-# Build all packages & applications
-pnpm build
+# Build
+pnpm build           # Build all packages first, then apps
+pnpm build:packages  # Build core, github, parser, rag, and agent packages
+pnpm build:web       # Build Next.js frontend
+pnpm build:server    # Build Express backend
 
-# Run unit test suite
-pnpm test
+# Testing & Quality
+pnpm test            # Run Vitest test suite
+pnpm lint            # Run linter across packages
 
-# Database operations (Drizzle ORM)
-pnpm db:generate    # Generate SQL migrations
-pnpm db:push        # Push schema directly to PostgreSQL database
+# Database Operations (Drizzle ORM)
+pnpm db:generate     # Generate SQL migration files
+pnpm db:migrate      # Apply migrations to PostgreSQL
+pnpm db:push         # Push schema directly to database
+pnpm db:studio       # Launch Drizzle Studio database UI
 
-# Local infrastructure (Postgres with pgvector + Redis)
-docker-compose up -d
+# Local Services (Docker Compose)
+pnpm docker:up       # Launch Postgres (pgvector) + Redis containers
+pnpm docker:down     # Stop local Docker containers
 ```
 
 ---
