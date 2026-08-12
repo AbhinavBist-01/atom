@@ -1,4 +1,4 @@
-﻿# AGENTS.md — ATOM: Autonomous GitHub Issue Resolution Agent
+# AGENTS.md — ATOM: Autonomous GitHub Issue Resolution Agent
 
 > **Status**: Planning Phase · **Version**: 0.1.0 · **Last Updated**: 2026-08-12
 
@@ -117,57 +117,57 @@ Each Chunk -> { content, filePath, startLine, endLine, nodeType, lang, gitBlameC
 
 ### Frontend — apps/web
 
-| Concern      | Choice                            |
-|---|---|
-| Framework    | Next.js 14+ (App Router)          |
-| Language     | TypeScript                        |
-| Styling      | Tailwind CSS v3                   |
-| Icons        | Lucide React                      |
-| Code Viewer  | Monaco Editor                     |
-| Diff Viewer  | react-diff-viewer-continued       |
-| Real-time    | WebSocket / SSE client            |
+| Concern     | Choice                           |
+| ----------- | -------------------------------- |
+| Framework   | Next.js 16+ (App Router)         |
+| Language    | TypeScript                       |
+| Styling     | Tailwind CSS v3                  |
+| Icons       | Lucide React                     |
+| Code Viewer | Monaco Editor                    |
+| Diff Viewer | react-diff-viewer-continued      |
+| Real-time   | WebSocket / SSE client           |
 
 ### Backend — apps/server
 
-| Concern      | Choice                            |
-|---|---|
-| Runtime      | Node.js 20+                       |
-| Language     | TypeScript                        |
-| Framework    | Express.js                        |
-| Auth         | JWT + GitHub OAuth                |
-| Validation   | Zod                               |
-| Job Queue    | BullMQ + Redis                    |
-| Real-time    | Socket.io / SSE                   |
+| Concern    | Choice                              |
+| ---------- | ----------------------------------- |
+| Runtime    | Node.js 20+                         |
+| Language   | TypeScript                          |
+| Framework  | Express.js                          |
+| Auth       | Better Auth (GitHub OAuth provider) |
+| Validation | Zod                                 |
+| Job Queue  | BullMQ + Redis                      |
+| Real-time  | Socket.io / SSE                     |
 
 ### Data Layer
 
-| Concern      | Choice                            |
-|---|---|
-| Relational   | Neon PostgreSQL (serverless)      |
-| Vector Store | pgvector (primary) + Pinecone     |
-| Sparse Search| Postgres FTS + wink-bm25          |
-| Cache        | Redis                             |
-| ORM          | Drizzle ORM                       |
+| Concern       | Choice                        |
+| ------------- | ----------------------------- |
+| Relational    | Neon PostgreSQL (serverless)  |
+| Vector Store  | pgvector (primary) + Pinecone |
+| Sparse Search | Postgres FTS + wink-bm25      |
+| Cache         | Redis                         |
+| ORM           | Drizzle ORM                   |
 
 ### AI / LLM
 
-| Concern      | Choice                             |
-|---|---|
-| Completion   | OpenAI gpt-4o / o3-mini            |
-| Embeddings   | OpenAI text-embedding-3-small      |
-| Reranker     | Cohere rerank-english-v3.0         |
-| Output Shape | OpenAI JSON mode + Zod schema      |
+| Concern      | Choice                        |
+| ------------ | ----------------------------- |
+| Completion   | OpenAI gpt-4o / o3-mini       |
+| Embeddings   | OpenAI text-embedding-3-small |
+| Reranker     | Cohere rerank-english-v3.0    |
+| Output Shape | OpenAI JSON mode + Zod schema |
 
 ### Infra & Tooling
 
-| Concern      | Choice                             |
-|---|---|
-| Monorepo     | pnpm workspaces                    |
-| Code Parser  | Tree-sitter (Node bindings)        |
-| GitHub       | @octokit/rest + @octokit/webhooks  |
-| Local Dev    | Docker Compose (Redis, Postgres)   |
-| Linting      | ESLint + Prettier                  |
-| Testing      | Vitest                             |
+| Concern     | Choice                            |
+| ----------- | --------------------------------- |
+| Monorepo    | pnpm workspaces                   |
+| Code Parser | Tree-sitter (Node bindings)       |
+| GitHub      | @octokit/rest + @octokit/webhooks |
+| Local Dev   | Docker Compose (Redis, Postgres)  |
+| Linting     | ESLint + Prettier                 |
+| Testing     | Vitest                            |
 
 ---
 
@@ -250,7 +250,8 @@ CREATE TABLE citations (
 ## 6. Phased Implementation Roadmap
 
 ### Phase 1 — Monorepo Scaffold & Infrastructure
-- [ ] Init pnpm workspace with apps/web, apps/server, packages/*
+
+- [ ] Init pnpm workspace with apps/web, apps/server, packages/\*
 - [ ] TypeScript configs (base tsconfig + per-package extends)
 - [ ] ESLint + Prettier + Vitest setup
 - [ ] docker-compose.yml (Redis + Postgres)
@@ -258,13 +259,15 @@ CREATE TABLE citations (
 - [ ] Drizzle ORM schema + initial migration
 
 ### Phase 2 — GitHub Integration
-- [ ] GitHub App / OAuth flow (installation-based or PAT)
+
+- [ ] Better Auth setup with GitHub OAuth provider (social login)
 - [ ] Octokit client wrapper: issues, PRs, commits, file trees, blame
-- [ ] Express webhook handler for issues.*, push, pull_request.* events
+- [ ] Express webhook handler for issues._, push, pull_request._ events
 - [ ] Webhook signature verification via @octokit/webhooks
 - [ ] Shallow git clone module using simple-git
 
 ### Phase 3 — Code Parsing & Indexing Pipeline
+
 - [ ] Tree-sitter integration: TypeScript, JavaScript, Python, Go, Java, Rust
 - [ ] Smart chunker: extract functions/classes/modules with line ranges
 - [ ] Git blame tagging per chunk (last-modifying commit)
@@ -273,6 +276,7 @@ CREATE TABLE citations (
 - [ ] BullMQ job: indexRepo — triggered on repo connect or push
 
 ### Phase 4 — Hybrid RAG Retrieval Engine
+
 - [ ] HyDE: LLM generates hypothetical fix document from issue text, then embed it
 - [ ] Dense retriever: pgvector cosine similarity search
 - [ ] Sparse retriever: BM25 / Postgres FTS keyword search
@@ -281,6 +285,7 @@ CREATE TABLE citations (
 - [ ] Context Builder: assemble final prompt context window with token budgeting
 
 ### Phase 5 — Agentic Reasoning & RCA
+
 - [ ] Zod output schema: { rootCause, confidence, evidence[], patchDiff, testPatch }
 - [ ] Multi-step LLM chain: RCA -> Citations -> Patch -> Tests
 - [ ] Citation extractor: map each claim to filePath:startLine-endLine + commitHash
@@ -289,12 +294,14 @@ CREATE TABLE citations (
 - [ ] Confidence scorer: low / medium / high based on retrieval quality + LLM self-eval
 
 ### Phase 6 — Async Job Queue & Real-time Streaming
+
 - [ ] BullMQ queues: indexRepo, processIssue, embedChunks
 - [ ] SSE / Socket.io: broadcast live agent step progress to frontend
 - [ ] Dead-letter queue + exponential backoff retry
 - [ ] Run status persisted to runs table in real time
 
 ### Phase 7 — Frontend Dashboard
+
 - [ ] Layout: Sidebar nav (repos, issues, runs) + main content area
 - [ ] Repositories page: connect repo, indexing status, manual re-index trigger
 - [ ] Issues page: list + filter by status, repo, severity
@@ -308,6 +315,7 @@ CREATE TABLE citations (
 - [ ] Monaco Editor for code, dark mode default
 
 ### Phase 8 — Validation & Benchmarking
+
 - [ ] Sandboxed test runner: apply patch -> run test suite -> report pass/fail
 - [ ] Evaluate subset of SWE-bench Lite (300 real bugs)
 - [ ] Track: patch acceptance rate, test pass rate, RCA citation accuracy
@@ -365,6 +373,10 @@ GITHUB_WEBHOOK_SECRET=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 
+# Better Auth
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=http://localhost:4000
+
 # OpenAI
 OPENAI_API_KEY=
 
@@ -382,8 +394,7 @@ PINECONE_INDEX=
 REDIS_URL=redis://localhost:6379
 
 # App
-NEXTAUTH_SECRET=
-NEXTAUTH_URL=http://localhost:3000
+NEXT_PUBLIC_SERVER_URL=http://localhost:4000
 PORT=4000
 ```
 
@@ -412,14 +423,14 @@ POST   /webhooks/github            -> GitHub webhook receiver
 
 ## 10. Immediate Next Steps
 
-| Priority | Task                                          |
-|---|---|
-| P0       | Scaffold monorepo with pnpm workspaces        |
-| P0       | Setup Drizzle + Neon Postgres + migrations    |
-| P0       | GitHub OAuth + Octokit wrapper                |
-| P1       | Tree-sitter parser + smart chunker            |
-| P1       | Embedding pipeline + pgvector upsert          |
-| P1       | BullMQ indexRepo job                          |
-| P2       | HyDE + Hybrid retriever + Cohere reranker     |
-| P2       | LLM RCA chain + Zod structured output         |
-| P2       | Next.js frontend skeleton + Issue Workbench   |
+| Priority | Task                                        |
+| -------- | ------------------------------------------- |
+| P0       | Scaffold monorepo with pnpm workspaces      |
+| P0       | Setup Drizzle + Neon Postgres + migrations  |
+| P0       | GitHub OAuth + Octokit wrapper              |
+| P1       | Tree-sitter parser + smart chunker          |
+| P1       | Embedding pipeline + pgvector upsert        |
+| P1       | BullMQ indexRepo job                        |
+| P2       | HyDE + Hybrid retriever + Cohere reranker   |
+| P2       | LLM RCA chain + Zod structured output       |
+| P2       | Next.js frontend skeleton + Issue Workbench |
