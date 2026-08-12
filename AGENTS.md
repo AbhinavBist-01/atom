@@ -90,7 +90,7 @@
 - [ ] Implement smart semantic chunking (function-level, class-level, module-level with context wrappers).
 - [ ] Construct metadata extraction pipeline (file path, line range, AST node type, imports/exports, git history tags).
 - [ ] Implement dual indexing:
-  - Vector embeddings generation & upsert to Pinecone/pgvector.
+  - Vector embeddings generation & upsert to Pinecone.
   - BM25 sparse keyword indexing for exact symbol/variable matching.
 
 ### Phase 4: Advanced RAG & Retrieval Engine
