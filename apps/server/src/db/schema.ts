@@ -30,7 +30,7 @@ export const chunks = pgTable("chunks", {
   nodeType: text("node_type"),
   lang: text("lang"),
   content: text("content").notNull(),
-  embedding: vector("embedding", { dimensions: 1536 }),
+  pineconeVectorId: text("pinecone_vector_id"),
   gitBlameCommit: text("git_blame_commit"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

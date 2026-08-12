@@ -40,10 +40,11 @@ atom/
 |---|---|
 | **Frontend** | Next.js 16+ (App Router), React 19, Tailwind CSS, Lucide Icons |
 | **Backend** | Express.js, Node.js, Better Auth (GitHub OAuth), Zod |
-| **Database & ORM** | Neon PostgreSQL / pgvector, Drizzle ORM |
+| **Database & ORM** | Neon PostgreSQL (`pg`), Drizzle ORM |
+| **Vector Database** | Pinecone Vector DB (`@pinecone-database/pinecone`) |
 | **Queue & Cache** | Redis 7 + BullMQ |
 | **GitHub Integration** | Octokit REST, `@octokit/webhooks`, `simple-git` |
-| **RAG & Search** | OpenAI `text-embedding-3-small`, BM25, Cohere Rerank v3 |
+| **RAG & Search** | OpenAI `text-embedding-3-small`, Pinecone + BM25, Cohere Rerank v3 |
 | **Code Parsing** | Tree-sitter AST parser (`web-tree-sitter`) |
 
 ---
