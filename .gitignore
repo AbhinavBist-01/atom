@@ -24,3 +24,5 @@ Thumbs.db
 # IDE & Editors
 .vscode/
 .idea/
+# Temporary Workspace & Scratch
+scratch/

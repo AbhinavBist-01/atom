@@ -1,7 +1,7 @@
 # CLAUDE.md — ATOM Project Summary & Status
 
 ## 1. Executive Summary & Status
-- **Status**: Phase 2 Complete (GitHub App Integration & Webhook Listener)
+- **Status**: Phase 3 Complete (Code Parsing & Repository Indexing Pipeline)
 - **Monorepo Manager**: `pnpm` workspaces (`pnpm-workspace.yaml`)
 - **Node Version**: >= 20.0.0
 
@@ -22,13 +22,13 @@ atom/
 │
 ├── apps/
 │   ├── web/                   # Next.js 16 (App Router) + Tailwind CSS Dashboard UI
-│   └── server/                # Express.js API, Better Auth, Webhook listener, Repos & Issues REST routes
+│   └── server/                # Express.js API, Better Auth, Webhook listener, Repos & Issues REST routes, indexRepo job
 │
 └── packages/
     ├── core/                  # Shared Zod schemas (Citations, RCA, Runs) & domain types
     ├── github/                # Octokit REST client, App authentication, Webhook signature verifier & GitCloner
-    ├── parser/                # Tree-sitter AST parser & multi-language chunker
-    ├── rag/                   # HyDE, OpenAI Embeddings, Pinecone/BM25 & Reciprocal Rank Fusion (RRF)
+    ├── parser/                # Smart AST & Document Chunker (functions, classes, methods, markdown sections)
+    ├── rag/                   # HyDE, OpenAI Embeddings (`text-embedding-3-small`), BM25 & Reciprocal Rank Fusion (RRF)
     └── agent/                 # LLM Root Cause Analysis, Patch & Test generation engine
 ```
 
@@ -40,12 +40,12 @@ atom/
 |---|---|---|
 | **Frontend** | Next.js 16+ (App Router), React 19, Tailwind CSS | Dashboard, Issue Workbench, Diff & Evidence viewer |
 | **Backend** | Express.js, Node.js, Better Auth | REST APIs, GitHub Webhook listener, Better Auth (GitHub OAuth) |
-| **Database & ORM** | Neon PostgreSQL (`pg`), Drizzle ORM | Relational metadata (users, repos, issues, runs, citations) |
-| **Vector Database** | Pinecone Vector DB (`@pinecone-database/pinecone`) | 1536-dim embeddings index (`atom-code-chunks`, cosine metric) |
-| **Queue & Cache** | Redis 7 + BullMQ | Async job queues (`indexRepo`, `processIssue`, `embedChunks`) |
+| **Database & ORM** | Neon PostgreSQL (`pg`), Drizzle ORM | Relational metadata (`repositories`, `chunks`, `issues`, `runs`, `rca_results`, `citations`) |
+| **Vector DB / Store** | Neon Postgres `vector` (`pgvector`) & OpenAI Embeddings | 1536-dim embeddings via `text-embedding-3-small` |
+| **Queue & Cache** | Redis 7 + BullMQ | Async job queues (`indexRepoTask`, `processIssue`, `embedChunks`) |
 | **GitHub Integration** | Octokit REST, `@octokit/auth-app`, `simple-git` | GitHub App auth, bot PRs/comments (`atom-agent[bot]`), git blame |
-| **RAG & Reranking** | OpenAI `text-embedding-3-small`, BM25, RRF | Reciprocal Rank Fusion (100% free $0 API cost reranking) |
-| **Code Parsing** | Tree-sitter AST parser (`web-tree-sitter`) | Multi-language AST semantic chunking |
+| **RAG & Reranking** | OpenAI `text-embedding-3-small`, BM25, RRF | Reciprocal Rank Fusion hybrid reranking |
+| **Code Parsing** | Smart structural AST chunker | Extracts functions, classes, methods, markdown paragraphs with line bounds |
 
 ---
 
@@ -72,7 +72,7 @@ pnpm lint            # Run linter across packages
 
 # Database Operations (Drizzle ORM)
 pnpm db:generate     # Generate SQL migration files
-pnpm db:migrate      # Apply migrations to PostgreSQL
+pnpm db:migrate      # Apply migrations to PostgreSQL (Neon DB)
 pnpm db:push         # Push schema directly to database
 pnpm db:studio       # Launch Drizzle Studio database UI
 
@@ -93,16 +93,15 @@ pnpm docker:down     # Stop local Docker containers
 2. **Package Scaffolding** (5 packages):
    - `@atom/core`: Zod schemas (`CitationSchema`, `RcaResultSchema`) and shared TypeScript types.
    - `@atom/github`: Octokit client stub and GitHub integration placeholder.
-   - `@atom/parser`: Tree-sitter code parsing and `CodeChunk` type definitions.
+   - `@atom/parser`: Tree-sitter & structural code chunker definitions.
    - `@atom/rag`: Reciprocal Rank Fusion (`reciprocalRankFusion`) utility for hybrid search merging.
-   - `@atom/agent`: Issue analysis engine baseline with `analyzeIssue()` stub.
+   - `@atom/agent`: Issue analysis engine baseline.
 3. **Application Baseline** (2 apps):
    - `apps/server`: Express.js entry point with health check, Drizzle ORM schema defining 6 tables (`repositories`, `chunks`, `issues`, `runs`, `rca_results`, `citations`), and `drizzle.config.ts`.
-   - `apps/web`: Next.js App Router with Tailwind CSS dark-mode dashboard, `layout.tsx`, and `page.tsx` home view.
-4. **Infrastructure & Environment**:
-   - `docker-compose.yml`: PostgreSQL 16 + Redis 7 Alpine containers.
-   - `.env.example`: Documented template for GitHub App, Better Auth, OpenAI, Postgres, Pinecone, and Redis keys.
-   - `.gitignore`: Configured to exclude `**/dist/`, `*.tsbuildinfo`, `node_modules/`, `.next/`, and `.env` files.
+   - `apps/web`: Next.js App Router with Tailwind CSS dark-mode dashboard.
+4. **Database & Infrastructure**:
+   - Connected Neon PostgreSQL with SSL configuration & successfully executed initial Drizzle migrations.
+   - Configured `drizzle.config.ts` to dynamically load root `.env` environment variables.
 
 ### Phase 2 — GitHub API Integration & Webhook Listener
 1. **GitHub Package (`@atom/github`)**:
@@ -112,8 +111,27 @@ pnpm docker:down     # Stop local Docker containers
 2. **Server Services (`apps/server`)**:
    - `Better Auth` setup with GitHub OAuth social provider integration (`src/auth.ts`).
    - Webhook Endpoint (`POST /webhooks/github`): Verified event receiver for issue lifecycle & app installation events.
-   - Repos API Router (`GET /api/repos`, `POST /api/repos`): Repository connection and management.
-   - Issues API Router (`GET /api/issues/:owner/:repo/:number`, `POST /api/issues/:owner/:repo/:number/run`): Issue details retrieval & agent analysis run trigger.
+
+### Phase 3 — Code Parsing & Repository Indexing Pipeline
+1. **Smart Code & Document Chunker (`packages/parser`)**:
+   - Built structural parser extracting function, class, and method line boundaries (`startLine`, `endLine`, `nodeType`).
+   - Added Markdown paragraph & section chunking (`.md`).
+   - Fallback window sliding chunker for unstructured code.
+2. **Batch Embedding Generator (`packages/rag`)**:
+   - Integrated OpenAI `text-embedding-3-small` with automatic batching (50 chunks per request) and whitespace cleaning.
+   - Retained Reciprocal Rank Fusion (RRF) search score combiner.
+3. **Database Connection & Indexer Pipeline (`apps/server`)**:
+   - Created database connection module ([`apps/server/src/db/index.ts`](file:///C:/Users/abhin/OneDrive/Desktop/ai-cohort/projects/atom/apps/server/src/db/index.ts)) exporting schema-bound Drizzle ORM client.
+   - Implemented `indexRepoTask` ([`apps/server/src/jobs/indexRepo.ts`](file:///C:/Users/abhin/OneDrive/Desktop/ai-cohort/projects/atom/apps/server/src/jobs/indexRepo.ts)):
+     - Shallow clones repo using `GitCloner`.
+     - Scans supported code & doc files (`.ts`, `.js`, `.py`, `.go`, `.rs`, `.java`, `.md`).
+     - Generates vector embeddings via OpenAI API.
+     - Inserts chunk records in batches into Neon Postgres `chunks` table.
+     - Updates repository status to `"ready"` with timestamp `indexedAt`.
+   - Wired REST endpoints in [`apps/server/src/routes/repos.ts`](file:///C:/Users/abhin/OneDrive/Desktop/ai-cohort/projects/atom/apps/server/src/routes/repos.ts):
+     - `GET /api/repos` — list connected repos from database.
+     - `POST /api/repos` — register repository & trigger background indexing.
+     - `POST /api/repos/:id/index` — trigger manual re-indexing.
 
 ---
 
@@ -121,38 +139,19 @@ pnpm docker:down     # Stop local Docker containers
 
 | Queue Name | Purpose & Workflow |
 |---|---|
-| **`indexRepo`** | Asynchronously clones repository via `simple-git`, runs Tree-sitter AST parsing, extracts function/class chunks, generates OpenAI embeddings, and populates Pinecone + Neon Postgres without HTTP request timeouts. |
-| **`processIssue`** | Executes RAG pipeline (HyDE query expansion $\rightarrow$ Pinecone vector search + BM25 keyword search $\rightarrow$ Reciprocal Rank Fusion $\rightarrow$ LLM RCA reasoning $\rightarrow$ diff patch generation $\rightarrow$ automated test generation). |
+| **`indexRepo`** | Asynchronously clones repository via `simple-git`, runs smart AST chunking, generates OpenAI embeddings, and populates Neon Postgres `chunks` table. |
+| **`processIssue`** | Executes RAG pipeline (HyDE query expansion $\rightarrow$ vector search + FTS keyword search $\rightarrow$ Reciprocal Rank Fusion $\rightarrow$ LLM RCA reasoning $\rightarrow$ diff patch generation $\rightarrow$ automated test generation). |
 | **`embedChunks`** | Batch processes OpenAI embedding API calls with rate-limit throttling and exponential backoff retry. |
 
-**Real-Time SSE Broadcasting**: Workers publish execution progress to Redis Pub/Sub, which streams live step-by-step progress (`cloning` $\rightarrow$ `parsing` $\rightarrow$ `embedding` $\rightarrow$ `retrieving` $\rightarrow$ `patching`) to the Next.js frontend via Server-Sent Events (SSE).
-
 ---
 
-## 7. Setup & Execution Checklist
+## 7. Next Steps (Phase 4 & Phase 5)
 
-1. **Copy `.env`**: `Copy-Item .env.example .env`
-2. **Create Pinecone Index**:
-   - Index Name: `atom-code-chunks`
-   - Dimensions: `1536`
-   - Metric: `cosine`
-3. **Register GitHub App** (GitHub Settings $\rightarrow$ Developer Settings $\rightarrow$ GitHub Apps):
-   - Callback URL: `http://localhost:4000/api/auth/callback/github`
-   - Webhook URL: `https://<your-domain-or-ngrok>/webhooks/github`
-   - Permissions: Issues (`Read & Write`), Pull Requests (`Read & Write`), Contents (`Read-only`)
-   - Webhook Subscriptions: `Issues`, `Pull Request`, `Push`
-4. **Fill Credentials in `.env`**: `OPENAI_API_KEY`, `PINECONE_API_KEY`, `DATABASE_URL`, `REDIS_URL`, `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_WEBHOOK_SECRET`.
-5. **Start & Run**:
-   - `pnpm docker:up`
-   - `pnpm db:push`
-   - `pnpm dev`
-
----
-
-## 8. Next Steps (Phase 3 & Beyond)
-
-1. **Phase 3 — Code Parsing & Hybrid Indexing Pipeline**:
-   - Multi-language AST parsing using Tree-sitter (TS, JS, Python, Go, Rust, Java).
-   - Smart semantic chunker (function/class level node extraction).
-   - Git blame commit hash tagging per chunk.
-   - Batch OpenAI embeddings generation + Pinecone upsert & BM25 sparse index update via BullMQ `indexRepo` job queue.
+1. **Phase 4 — Hybrid RAG Retrieval Engine**:
+   - HyDE (Hypothetical Document Embeddings): LLM generates hypothetical code fix from GitHub issue text, then embeds it.
+   - Dense Vector Search (pgvector cosine similarity) + Sparse Keyword Search (FTS / BM25).
+   - Reciprocal Rank Fusion (RRF) search merger & Cohere cross-encoder reranker.
+2. **Phase 5 — LLM Agentic Reasoning Engine**:
+   - Zod structured output schema (`rootCause`, `confidence`, `citations`, `patchDiff`, `testPatch`).
+   - File:Line evidence citation generator mapping claims to chunk line ranges & git blame commits.
+   - Unified diff patch generator & automated unit test generator.
