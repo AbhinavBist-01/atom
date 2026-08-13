@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { toNodeHandler } from "better-auth/node";
+import { auth } from "./auth.js";
 import webhookRouter from "./webhooks/github.js";
 import reposRouter from "./routes/repos.js";
 import issuesRouter from "./routes/issues.js";
@@ -12,6 +14,10 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(cors());
+
+// Mount Better Auth router for GitHub OAuth login flow
+app.all("/api/auth/*", toNodeHandler(auth));
+
 app.use(express.json());
 
 // API Routes & Webhooks
