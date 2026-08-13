@@ -1,7 +1,7 @@
 # CLAUDE.md — ATOM Project Summary & Status
 
 ## 1. Executive Summary & Status
-- **Status**: Phase 3 Complete (Code Parsing & Repository Indexing Pipeline)
+- **Status**: Phase 5 Complete (GitHub App Auth, Agentic RCA Engine, Database Persistence & Runs API)
 - **Monorepo Manager**: `pnpm` workspaces (`pnpm-workspace.yaml`)
 - **Node Version**: >= 20.0.0
 
