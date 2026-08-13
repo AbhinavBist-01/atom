@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Search, ArrowRight, Sparkles } from "lucide-react";
+import { AlertCircle, Search, ArrowRight, Sparkles, FolderGit2 } from "lucide-react";
 
 export default function IssuesDirectoryPage() {
   const router = useRouter();
@@ -15,7 +15,6 @@ export default function IssuesDirectoryPage() {
     e.preventDefault();
     if (!issueUrl) return;
 
-    // Parse URL format: https://github.com/owner/repo/issues/123
     try {
       const urlObj = new URL(issueUrl);
       const parts = urlObj.pathname.split("/").filter(Boolean);
@@ -43,36 +42,36 @@ export default function IssuesDirectoryPage() {
     <div className="max-w-4xl mx-auto space-y-8 py-4">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-white flex items-center space-x-3">
-          <AlertCircle className="w-7 h-7 text-blue-400" />
+          <AlertCircle className="w-7 h-7 text-white" />
           <span>Issue Workbench Intake</span>
         </h1>
-        <p className="text-sm text-gray-400 mt-1">
-          Provide a GitHub issue to trigger ATOM's autonomous Root Cause Analysis (RCA), code citations, and patch generation.
+        <p className="text-sm text-zinc-400 mt-1">
+          Intake a GitHub issue to trigger ATOM's autonomous Root Cause Analysis (RCA), code citations, and patch generation.
         </p>
       </div>
 
       {/* URL Intake Card */}
-      <div className="p-6 bg-gray-900/60 rounded-xl border border-gray-800 backdrop-blur-sm space-y-4">
-        <h2 className="text-base font-semibold text-gray-200 flex items-center space-x-2">
-          <Sparkles className="w-5 h-5 text-indigo-400" />
+      <div className="glass-panel p-6 rounded-2xl border border-white/10 space-y-4">
+        <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+          <Sparkles className="w-4 h-4 text-white" />
           <span>Intake via GitHub Issue URL</span>
         </h2>
 
-        <form onSubmit={handleUrlSubmit} className="flex gap-3">
+        <form onSubmit={handleUrlSubmit} className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-3" />
+            <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3" />
             <input
               type="text"
               placeholder="https://github.com/facebook/react/issues/28000"
               value={issueUrl}
               onChange={(e) => setIssueUrl(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm bg-gray-950 border border-gray-800 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 font-mono"
+              className="w-full pl-10 pr-4 py-2.5 text-xs bg-black/60 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:border-white/30 font-mono"
             />
           </div>
           <button
             type="submit"
             disabled={!issueUrl}
-            className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition disabled:opacity-50 flex items-center space-x-2"
+            className="glass-button-primary px-6 py-2.5 text-xs rounded-xl font-semibold flex items-center justify-center space-x-2 shrink-0 disabled:opacity-50"
           >
             <span>Open Workbench</span>
             <ArrowRight className="w-4 h-4" />
@@ -81,40 +80,43 @@ export default function IssuesDirectoryPage() {
       </div>
 
       {/* Manual Entry Card */}
-      <div className="p-6 bg-gray-900/40 rounded-xl border border-gray-800 space-y-4">
-        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Or Enter Details Manually</h2>
+      <div className="glass-card p-6 rounded-2xl border border-white/10 space-y-4">
+        <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center space-x-2">
+          <FolderGit2 className="w-4 h-4 text-zinc-400" />
+          <span>Or Enter Repository Details Manually</span>
+        </h2>
 
         <form onSubmit={handleManualSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1">Owner</label>
+            <label className="block text-xs font-medium text-zinc-400 mb-1">Owner</label>
             <input
               type="text"
               placeholder="facebook"
               value={owner}
               onChange={(e) => setOwner(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm bg-gray-950 border border-gray-800 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-blue-500"
+              className="w-full px-3.5 py-2 text-xs bg-black/60 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:border-white/30"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1">Repo</label>
+            <label className="block text-xs font-medium text-zinc-400 mb-1">Repo</label>
             <input
               type="text"
               placeholder="react"
               value={repo}
               onChange={(e) => setRepo(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm bg-gray-950 border border-gray-800 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-blue-500"
+              className="w-full px-3.5 py-2 text-xs bg-black/60 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:border-white/30"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1">Issue #</label>
+            <label className="block text-xs font-medium text-zinc-400 mb-1">Issue #</label>
             <input
               type="number"
               placeholder="28000"
               value={issueNum}
               onChange={(e) => setIssueNum(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm bg-gray-950 border border-gray-800 rounded-lg text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 font-mono"
+              className="w-full px-3.5 py-2 text-xs bg-black/60 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:border-white/30 font-mono"
             />
           </div>
 
@@ -122,7 +124,7 @@ export default function IssuesDirectoryPage() {
             <button
               type="submit"
               disabled={!owner || !repo || !issueNum}
-              className="w-full px-4 py-2 text-sm font-semibold text-white bg-gray-800 hover:bg-gray-700 rounded-lg transition disabled:opacity-50 flex items-center justify-center space-x-2"
+              className="w-full glass-button-secondary py-2 text-xs rounded-xl font-semibold flex items-center justify-center space-x-2 disabled:opacity-50"
             >
               <span>Inspect Issue</span>
               <ArrowRight className="w-4 h-4" />

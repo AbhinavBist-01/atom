@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Code,
   Terminal,
+  Cpu,
 } from "lucide-react";
 
 interface IssueData {
@@ -56,11 +57,12 @@ export default function IssueWorkbenchPage() {
   const [logs, setLogs] = useState<string[]>([]);
   const [publishing, setPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:4000";
 
-  // Fetch GitHub Issue details
   useEffect(() => {
     async function fetchIssue() {
       try {
@@ -80,7 +82,6 @@ export default function IssueWorkbenchPage() {
     }
   }, [owner, repo, issueNumber, SERVER_URL]);
 
-  // Trigger ATOM Agent Analysis
   const handleRunAgent = async () => {
     setRunning(true);
     setError("");
@@ -114,57 +115,6 @@ export default function IssueWorkbenchPage() {
     }
   };
 
-  // Post Comment on GitHub
-  const handlePublishComment = async () => {
-    if (!runId) return;
-    setPublishing(true);
-    setPublishSuccess("");
-
-    try {
-      const res = await fetch(`${SERVER_URL}/api/runs/${runId}/publish`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "comment", owner, repo, issueNumber: parseInt(issueNumber, 10) }),
-      });
-
-      if (res.ok) {
-        setPublishSuccess("Comment posted successfully to GitHub issue!");
-      } else {
-        throw new Error("Failed to post comment");
-      }
-    } catch (err: any) {
-      setError(err.message || "Publish comment failed.");
-    } finally {
-      setPublishing(false);
-    }
-  };
-
-  const renderConfidenceBadge = (confidence?: string) => {
-    switch (confidence) {
-      case "high":
-        return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-            HIGH CONFIDENCE
-          </span>
-        );
-      case "medium":
-        return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            MEDIUM CONFIDENCE
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
-            LOW CONFIDENCE
-          </span>
-        );
-    }
-  };
-
-  const [verifying, setVerifying] = useState(false);
-  const [verifyResult, setVerifyResult] = useState<string | null>(null);
-
   const handleVerifyPatch = async () => {
     if (!runId) return;
     setVerifying(true);
@@ -194,17 +144,64 @@ export default function IssueWorkbenchPage() {
     }
   };
 
+  const handlePublishComment = async () => {
+    if (!runId) return;
+    setPublishing(true);
+    setPublishSuccess("");
+
+    try {
+      const res = await fetch(`${SERVER_URL}/api/runs/${runId}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "comment", owner, repo, issueNumber: parseInt(issueNumber, 10) }),
+      });
+
+      if (res.ok) {
+        setPublishSuccess("Comment posted successfully to GitHub issue!");
+      } else {
+        throw new Error("Failed to post comment");
+      }
+    } catch (err: any) {
+      setError(err.message || "Publish comment failed.");
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const renderConfidenceBadge = (confidence?: string) => {
+    switch (confidence) {
+      case "high":
+        return (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-white/10 text-white border border-white/20">
+            HIGH CONFIDENCE
+          </span>
+        );
+      case "medium":
+        return (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-zinc-800 text-zinc-300 border border-zinc-700">
+            MEDIUM CONFIDENCE
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-red-500/10 text-red-400 border border-red-500/20">
+            LOW CONFIDENCE
+          </span>
+        );
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Header Banner */}
-      <div className="p-6 bg-gray-900/60 rounded-xl border border-gray-800 backdrop-blur-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="glass-panel p-6 rounded-2xl border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-2">
           <div className="flex items-center space-x-3">
-            <span className="px-2.5 py-0.5 text-xs font-mono font-semibold bg-blue-500/10 text-blue-400 rounded-md border border-blue-500/20">
+            <span className="px-2.5 py-0.5 text-xs font-mono font-semibold bg-white/10 text-white rounded-md border border-white/10">
               {owner}/{repo}#{issueNumber}
             </span>
             {issue?.state && (
-              <span className="px-2 py-0.5 text-xs font-semibold bg-emerald-500/10 text-emerald-400 rounded-md uppercase">
+              <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-white/10 text-zinc-300 rounded uppercase">
                 {issue.state}
               </span>
             )}
@@ -212,13 +209,13 @@ export default function IssueWorkbenchPage() {
           <h1 className="text-xl font-bold text-white tracking-tight">
             {issue ? issue.title : `Issue #${issueNumber}`}
           </h1>
-          <p className="text-xs text-gray-400 flex items-center space-x-2">
-            <span>Opened by <strong className="text-gray-200">{issue?.author || "user"}</strong></span>
+          <p className="text-xs text-zinc-400 flex items-center space-x-2">
+            <span>Opened by <strong className="text-white">{issue?.author || "user"}</strong></span>
             <a
               href={`https://github.com/${owner}/${repo}/issues/${issueNumber}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center text-blue-400 hover:underline ml-2"
+              className="inline-flex items-center text-zinc-300 hover:text-white underline ml-2"
             >
               <span>View on GitHub</span>
               <ExternalLink className="w-3 h-3 ml-1" />
@@ -229,116 +226,116 @@ export default function IssueWorkbenchPage() {
         <button
           onClick={handleRunAgent}
           disabled={running}
-          className="px-6 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-xl transition shadow-lg shadow-blue-600/20 disabled:opacity-50 flex items-center justify-center space-x-2 shrink-0"
+          className="glass-button-primary px-6 py-3 text-xs rounded-xl font-semibold flex items-center justify-center space-x-2 shrink-0 disabled:opacity-50"
         >
-          {running ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5 fill-current" />}
+          {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
           <span>{running ? "Analyzing Issue..." : "Run ATOM Agent"}</span>
         </button>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm flex items-center space-x-2">
-          <ShieldAlert className="w-5 h-5 shrink-0" />
+        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs flex items-center space-x-2">
+          <ShieldAlert className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Execution Progress Trace */}
+      {/* Execution Progress Console */}
       {logs.length > 0 && (
-        <div className="p-5 bg-gray-950 rounded-xl border border-gray-800 space-y-2 font-mono text-xs text-gray-300">
-          <div className="flex items-center space-x-2 text-gray-400 pb-2 border-b border-gray-800">
-            <Terminal className="w-4 h-4 text-blue-400" />
-            <span className="font-semibold text-gray-200 uppercase tracking-wider">Live Agent Execution Trace</span>
+        <div className="p-5 bg-black/80 rounded-2xl border border-white/10 space-y-2 font-mono text-xs text-zinc-300">
+          <div className="flex items-center space-x-2 text-zinc-400 pb-2 border-b border-white/10">
+            <Terminal className="w-4 h-4 text-white" />
+            <span className="font-bold text-white uppercase tracking-wider text-[11px]">Live Agent Execution Trace</span>
           </div>
           {logs.map((log, i) => (
             <div key={i} className="flex items-center space-x-2">
-              <span className="text-blue-500">❯</span>
+              <span className="text-white">❯</span>
               <span>{log}</span>
             </div>
           ))}
         </div>
       )}
 
-      {/* Main Analysis Output */}
+      {/* Main RCA Output */}
       {rca && (
         <div className="space-y-6">
-          {/* Root Cause Analysis Card */}
-          <div className="p-6 bg-gray-900/40 rounded-xl border border-gray-800 space-y-4">
+          {/* Root Cause Analysis */}
+          <div className="glass-card p-6 rounded-2xl border border-white/10 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                <h2 className="text-base font-semibold text-white">Root Cause Analysis (RCA)</h2>
+                <CheckCircle2 className="w-5 h-5 text-white" />
+                <h2 className="text-base font-bold text-white">Root Cause Analysis (RCA)</h2>
               </div>
               {renderConfidenceBadge(rca.confidence)}
             </div>
 
-            <div className="p-4 bg-gray-950 rounded-lg text-sm text-gray-300 leading-relaxed border border-gray-800 whitespace-pre-wrap">
+            <div className="p-4 bg-black/60 rounded-xl text-xs text-zinc-300 leading-relaxed border border-white/5 whitespace-pre-wrap font-mono">
               {rca.rootCause}
             </div>
           </div>
 
-          {/* Code Evidence & Citations */}
+          {/* Line-Level Code Evidence */}
           {rca.citations && rca.citations.length > 0 && (
-            <div className="p-6 bg-gray-900/40 rounded-xl border border-gray-800 space-y-4">
-              <h2 className="text-base font-semibold text-white flex items-center space-x-2">
-                <FileCode className="w-5 h-5 text-cyan-400" />
+            <div className="glass-card p-6 rounded-2xl border border-white/10 space-y-4">
+              <h2 className="text-base font-bold text-white flex items-center space-x-2">
+                <FileCode className="w-5 h-5 text-white" />
                 <span>Line-Level Code Evidence & Citations</span>
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {rca.citations.map((cit, idx) => (
-                  <div key={idx} className="p-3 bg-gray-950 rounded-lg border border-gray-800 text-xs font-mono space-y-1">
-                    <div className="flex items-center justify-between text-blue-400">
-                      <span className="font-semibold">{cit.filePath}</span>
-                      <span className="text-gray-500">L{cit.startLine}-{cit.endLine}</span>
+                  <div key={idx} className="p-3 bg-black/60 rounded-xl border border-white/10 text-xs font-mono space-y-1">
+                    <div className="flex items-center justify-between text-white">
+                      <span className="font-bold">{cit.filePath}</span>
+                      <span className="text-zinc-500">L{cit.startLine}-{cit.endLine}</span>
                     </div>
-                    {cit.commitHash && <p className="text-gray-500">Commit: {cit.commitHash}</p>}
+                    {cit.commitHash && <p className="text-zinc-500 text-[11px]">Commit: {cit.commitHash}</p>}
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Unified Diff Patch Viewer */}
+          {/* Proposed Unified Diff Patch */}
           {rca.patchDiff && (
-            <div className="p-6 bg-gray-900/40 rounded-xl border border-gray-800 space-y-4">
-              <h2 className="text-base font-semibold text-white flex items-center space-x-2">
-                <Code className="w-5 h-5 text-indigo-400" />
+            <div className="glass-card p-6 rounded-2xl border border-white/10 space-y-4">
+              <h2 className="text-base font-bold text-white flex items-center space-x-2">
+                <Code className="w-5 h-5 text-white" />
                 <span>Proposed Unified Diff Patch</span>
               </h2>
 
-              <pre className="p-4 bg-[#05080e] rounded-lg text-xs font-mono text-gray-200 overflow-x-auto border border-gray-800 leading-relaxed">
+              <pre className="p-4 bg-black rounded-xl text-xs font-mono text-zinc-200 overflow-x-auto border border-white/10 leading-relaxed">
                 {rca.patchDiff}
               </pre>
             </div>
           )}
 
-          {/* Test Case Patch */}
+          {/* Regression Unit Tests */}
           {rca.testPatch && (
-            <div className="p-6 bg-gray-900/40 rounded-xl border border-gray-800 space-y-4">
-              <h2 className="text-base font-semibold text-white flex items-center space-x-2">
-                <AlertCircle className="w-5 h-5 text-emerald-400" />
+            <div className="glass-card p-6 rounded-2xl border border-white/10 space-y-4">
+              <h2 className="text-base font-bold text-white flex items-center space-x-2">
+                <Cpu className="w-5 h-5 text-white" />
                 <span>Automated Regression Unit Tests</span>
               </h2>
 
-              <pre className="p-4 bg-[#05080e] rounded-lg text-xs font-mono text-emerald-300 overflow-x-auto border border-gray-800 leading-relaxed">
+              <pre className="p-4 bg-black rounded-xl text-xs font-mono text-zinc-300 overflow-x-auto border border-white/10 leading-relaxed">
                 {rca.testPatch}
               </pre>
             </div>
           )}
 
-          {/* Publish Action Bar */}
-          <div className="p-6 bg-gray-900/60 rounded-xl border border-gray-800 flex flex-wrap items-center justify-between gap-4">
+          {/* Resolution Action Bar */}
+          <div className="glass-panel p-6 rounded-2xl border border-white/10 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h3 className="text-sm font-semibold text-white">Verification & Resolution</h3>
-              <p className="text-xs text-gray-400">Verify patch in sandbox or publish comment / pull request to GitHub.</p>
+              <h3 className="text-sm font-bold text-white">Verification & Resolution</h3>
+              <p className="text-xs text-zinc-400">Verify patch in sandboxed runner or publish comment / pull request to GitHub.</p>
             </div>
 
             <div className="flex items-center space-x-3">
               <button
                 onClick={handleVerifyPatch}
                 disabled={verifying}
-                className="px-4 py-2 text-xs font-semibold text-white bg-amber-600 hover:bg-amber-500 rounded-lg transition disabled:opacity-50 flex items-center space-x-2"
+                className="glass-button-secondary px-4 py-2 text-xs rounded-xl font-semibold flex items-center space-x-2 disabled:opacity-50"
               >
                 {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                 <span>Verify in Sandbox</span>
@@ -347,7 +344,7 @@ export default function IssueWorkbenchPage() {
               <button
                 onClick={handlePublishComment}
                 disabled={publishing}
-                className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition disabled:opacity-50 flex items-center space-x-2"
+                className="glass-button-primary px-4 py-2 text-xs rounded-xl font-semibold flex items-center space-x-2 disabled:opacity-50"
               >
                 {publishing ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquare className="w-4 h-4" />}
                 <span>Post GitHub Comment</span>
@@ -355,23 +352,23 @@ export default function IssueWorkbenchPage() {
 
               <button
                 onClick={() => alert("PR creation workflow initiated")}
-                className="px-4 py-2 text-xs font-semibold text-gray-200 bg-gray-800 hover:bg-gray-700 rounded-lg border border-gray-700 transition flex items-center space-x-2"
+                className="glass-button-secondary px-4 py-2 text-xs rounded-xl font-semibold flex items-center space-x-2"
               >
-                <GitPullRequest className="w-4 h-4 text-emerald-400" />
+                <GitPullRequest className="w-4 h-4 text-white" />
                 <span>Create Pull Request</span>
               </button>
             </div>
           </div>
 
           {verifyResult && (
-            <div className="p-4 bg-gray-950 border border-gray-800 rounded-xl text-xs font-mono text-gray-200">
+            <div className="p-4 bg-black border border-white/10 rounded-xl text-xs font-mono text-zinc-200">
               {verifyResult}
             </div>
           )}
 
           {publishSuccess && (
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm flex items-center space-x-2">
-              <CheckCircle2 className="w-5 h-5 shrink-0" />
+            <div className="p-4 bg-white/10 border border-white/20 rounded-xl text-white text-xs flex items-center space-x-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>{publishSuccess}</span>
             </div>
           )}

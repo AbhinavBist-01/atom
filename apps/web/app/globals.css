@@ -3,12 +3,80 @@
 @tailwind utilities;
 
 :root {
-  --background: #090d16;
-  --foreground: #f3f4f6;
+  --background: #050507;
+  --foreground: #fafafa;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism Design System */
+.glass-panel {
+  background: rgba(18, 18, 22, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 255, 255, 0.03);
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-button-primary {
+  background: #ffffff;
+  color: #000000;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+}
+
+.glass-button-primary:hover {
+  background: #f4f4f5;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.glass-button-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  transition: all 0.2s ease;
+}
+
+.glass-button-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Ambient Radial Glows */
+.radial-spotlight {
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.08) 0%, rgba(0, 0, 0, 0) 70%);
+}
+
+.radial-bottom-glow {
+  background: radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0) 60%);
 }

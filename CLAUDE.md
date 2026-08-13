@@ -147,22 +147,22 @@ pnpm docker:down     # Stop local Docker containers
      - `GET /api/runs/:id/stream`: Live Server-Sent Events (SSE) agent step trace stream.
      - `POST /api/runs/:id/publish`: Publish analysis & patch as issue comment or pull request via Octokit.
 
-### Phase 7 — Frontend Dashboard & Issue Workbench (`apps/web`)
-1. **Top Navbar & System Navigation (`apps/web/app/layout.tsx`)**:
-   - Modern dark-mode layout with status indicator ("Server Online"), breadcrumb links (Dashboard, Repositories, Issue Workbench).
-2. **Repository Management Workbench (`apps/web/app/repos/page.tsx`)**:
-   - Repository intake form with live status badges (`Ready`, `Indexing`, `Pending`, `Error`).
-   - Manual re-indexing & repository disconnection actions wired to REST API (`/api/repos`).
-3. **Issue Directory & Intake (`apps/web/app/issues/page.tsx`)**:
-   - Quick URL parser (`https://github.com/owner/repo/issues/number`) and manual intake router.
-4. **Issue Workbench Core View (`apps/web/app/issues/[owner]/[repo]/[number]/page.tsx`)**:
-   - Issue metadata header with direct link to GitHub.
-   - One-click **"Run ATOM Agent"** execution trigger.
-   - **Live Agent Execution Progress Trace** console.
-   - **Root Cause Analysis (RCA)** display with Confidence Score pill (`HIGH`, `MEDIUM`, `LOW`).
-   - **Line-Level Code Evidence Citations Grid** (`filePath`, `startLine`, `endLine`, `commitHash`).
-   - **Unified Diff Patch Viewer** & **Automated Unit Test Suite** patch viewer.
-   - **Publish Resolution Action Bar**: One-click "Post Comment on GitHub" (via Octokit) and "Create Pull Request".
+### Phase 7 — Monochrome Glassmorphism UI & GitHub Authentication (`apps/web`)
+1. **Glassmorphic Black, White & Gray Design System (`apps/web/app/globals.css`)**:
+   - High-contrast obsidian backgrounds (`#050507`), pure white highlights (`#ffffff`), and translucent glass cards (`backdrop-filter: blur(20px)`, `border: 1px solid rgba(255,255,255,0.08)`).
+2. **GitHub OAuth Authentication Flow (`apps/web/app/page.tsx`)**:
+   - Glassmorphic Hero Landing Page featuring **"Sign in with GitHub"** button integrated with Better Auth (`/api/auth/sign-in/github`).
+   - Authenticated redirection flow leading straight to the **Main Workspace** (`/workspace`).
+3. **Main Workspace & GitHub App Access (`apps/web/app/workspace/page.tsx`)**:
+   - **"Connect / Install GitHub App"** CTA button linking to GitHub App installation flow.
+   - Connected repositories grid displaying live index status badges (`Ready`, `Indexing`, `Pending`, `Error`).
+   - Fast repository intake form and manual re-indexing triggers.
+4. **Glassmorphic Issue Workbench (`apps/web/app/issues/[owner]/[repo]/[number]/page.tsx`)**:
+   - **Live Agent Execution Console** for real-time progress tracing.
+   - **Root Cause Analysis (RCA)** card with Confidence Score badge.
+   - **Line-Level Code Evidence Grid** (`filePath`, `startLine`, `endLine`).
+   - **Unified Diff Patch Viewer** & **Regression Unit Test Suite** patch viewer.
+   - **Verification & Resolution Bar**: "Verify in Sandbox" runner + "Post GitHub Comment" / "Create Pull Request" buttons via Octokit.
 
 ### Phase 8 — Sandboxed Test Runner & Patch Verification (`packages/agent` & `apps/server`)
 1. **Sandboxed Test Runner (`packages/agent/src/sandbox.ts`)**:
