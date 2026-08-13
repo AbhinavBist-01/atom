@@ -2,6 +2,8 @@ import { Router, Request, Response } from "express";
 import { db, schema } from "../db/index.js";
 import { eq } from "drizzle-orm";
 import { AtomGitHubClient } from "@atom/github";
+import { SandboxTestRunner } from "@atom/agent";
+import path from "path";
 
 const router: Router = Router();
 
@@ -58,6 +60,37 @@ router.get("/:id/stream", (req: Request, res: Response): void => {
   req.on("close", () => {
     res.end();
   });
+});
+
+// POST /api/runs/:id/verify -> Execute sandboxed test suite runner on proposed patch
+router.post("/:id/verify", async (req: Request, res: Response): Promise<void> => {
+  const runId = req.params.id as string;
+  const { owner, repo, testCommand } = req.body;
+
+  try {
+    const rca = await db.query.rcaResults.findFirst({
+      where: eq(schema.rcaResults.runId, runId),
+    });
+
+    if (!rca || !rca.patchDiff) {
+      res.status(400).json({ error: "No patch diff available to verify" });
+      return;
+    }
+
+    const workDir = path.join(process.cwd(), "scratch", "repos", `${owner}_${repo}`);
+    const runner = new SandboxTestRunner();
+
+    const result = await runner.runTests({
+      workDir,
+      patchDiff: rca.patchDiff,
+      testPatch: rca.testPatch || undefined,
+      testCommand: testCommand || "npm test",
+    });
+
+    res.json({ success: true, result });
+  } catch (error: any) {
+    res.status(500).json({ error: "Sandboxed verification failed", message: error.message });
+  }
 });
 
 // POST /api/runs/:id/publish -> Publish fix to GitHub as comment or PR

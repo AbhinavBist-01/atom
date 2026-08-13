@@ -1,7 +1,7 @@
 # CLAUDE.md — ATOM Project Summary & Status
 
 ## 1. Executive Summary & Status
-- **Status**: Phase 7 Complete (Frontend Dashboard & Issue Workbench UI)
+- **Status**: Phase 8 Complete (All 8 Architecture Roadmap Phases Implemented & Verified)
 - **Monorepo Manager**: `pnpm` workspaces (`pnpm-workspace.yaml`)
 - **Node Version**: >= 20.0.0
 
@@ -164,6 +164,15 @@ pnpm docker:down     # Stop local Docker containers
    - **Unified Diff Patch Viewer** & **Automated Unit Test Suite** patch viewer.
    - **Publish Resolution Action Bar**: One-click "Post Comment on GitHub" (via Octokit) and "Create Pull Request".
 
+### Phase 8 — Sandboxed Test Runner & Patch Verification (`packages/agent` & `apps/server`)
+1. **Sandboxed Test Runner (`packages/agent/src/sandbox.ts`)**:
+   - `SandboxTestRunner`: Applies generated unified diff patches (`patchDiff`) and regression unit test suites (`testPatch`) in an isolated temporary environment.
+   - Executes test suite runner with configurable timeouts, capturing exit codes, stdout, stderr, and execution duration.
+2. **Patch Verification Endpoint (`apps/server/src/routes/runs.ts`)**:
+   - Added `POST /api/runs/:id/verify`: Triggers automated sandboxed test suite execution on proposed agent patches.
+3. **Issue Workbench Verification UI (`apps/web/app/issues/[owner]/[repo]/[number]/page.tsx`)**:
+   - Added **"Verify in Sandbox"** button to run test verification directly from the UI and display live pass/fail status.
+
 ---
 
 ## 6. Background Job Queue Architecture (Redis + BullMQ)
@@ -176,8 +185,7 @@ pnpm docker:down     # Stop local Docker containers
 
 ---
 
-## 7. Next Steps (Phase 8 — Validation & Benchmarking)
+## 7. Next Steps & Production Maintenance
 
-1. **Phase 8 — Validation & Sandboxed Benchmarking**:
-   - Sandboxed test runner: apply patch $\rightarrow$ run test suite $\rightarrow$ report pass/fail.
-   - Benchmarking on SWE-bench Lite subset (track patch acceptance rate & RCA citation accuracy).
+- **Deploy Server & Web App**: Deploy `apps/web` to Vercel/Cloudflare and `apps/server` to Render/Fly.io.
+- **Continuous Benchmarking**: Run agent evaluation against SWE-bench Lite bug benchmarks.

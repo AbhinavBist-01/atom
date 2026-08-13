@@ -162,6 +162,38 @@ export default function IssueWorkbenchPage() {
     }
   };
 
+  const [verifying, setVerifying] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<string | null>(null);
+
+  const handleVerifyPatch = async () => {
+    if (!runId) return;
+    setVerifying(true);
+    setVerifyResult(null);
+
+    try {
+      const res = await fetch(`${SERVER_URL}/api/runs/${runId}/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ owner, repo }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.result) {
+        if (data.result.passed) {
+          setVerifyResult("✅ Sandbox Test Verification PASSED!");
+        } else {
+          setVerifyResult(`❌ Sandbox Test Verification FAILED: ${data.result.error || data.result.stderr}`);
+        }
+      } else {
+        throw new Error(data.message || "Verification failed");
+      }
+    } catch (err: any) {
+      setVerifyResult(`❌ Verification Error: ${err.message}`);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Header Banner */}
@@ -298,11 +330,20 @@ export default function IssueWorkbenchPage() {
           {/* Publish Action Bar */}
           <div className="p-6 bg-gray-900/60 rounded-xl border border-gray-800 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h3 className="text-sm font-semibold text-white">Publish Resolution</h3>
-              <p className="text-xs text-gray-400">Post evidence-first RCA comment or submit a Pull Request to GitHub.</p>
+              <h3 className="text-sm font-semibold text-white">Verification & Resolution</h3>
+              <p className="text-xs text-gray-400">Verify patch in sandbox or publish comment / pull request to GitHub.</p>
             </div>
 
             <div className="flex items-center space-x-3">
+              <button
+                onClick={handleVerifyPatch}
+                disabled={verifying}
+                className="px-4 py-2 text-xs font-semibold text-white bg-amber-600 hover:bg-amber-500 rounded-lg transition disabled:opacity-50 flex items-center space-x-2"
+              >
+                {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                <span>Verify in Sandbox</span>
+              </button>
+
               <button
                 onClick={handlePublishComment}
                 disabled={publishing}
@@ -321,6 +362,12 @@ export default function IssueWorkbenchPage() {
               </button>
             </div>
           </div>
+
+          {verifyResult && (
+            <div className="p-4 bg-gray-950 border border-gray-800 rounded-xl text-xs font-mono text-gray-200">
+              {verifyResult}
+            </div>
+          )}
 
           {publishSuccess && (
             <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm flex items-center space-x-2">

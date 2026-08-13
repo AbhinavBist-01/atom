@@ -1,6 +1,8 @@
 import OpenAI from "openai";
 import { RcaResult, RcaResultSchema } from "@atom/core";
 
+export * from "./sandbox.js";
+
 export interface CodeContextChunk {
   filePath: string;
   startLine: number;
