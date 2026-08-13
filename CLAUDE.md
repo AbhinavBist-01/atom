@@ -133,6 +133,20 @@ pnpm docker:down     # Stop local Docker containers
      - `POST /api/repos` — register repository & trigger background indexing.
      - `POST /api/repos/:id/index` — trigger manual re-indexing.
 
+### Phase 4 & 5 — GitHub App Credentials, Agentic RCA Engine & Runs API
+1. **GitHub App Credentials Integration**:
+   - Extracted RSA Private Key from `.pem` file (`atombot15.2026-08-13.private-key.pem`).
+   - Configured `GITHUB_APP_ID`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_WEBHOOK_SECRET`, and `GITHUB_APP_PRIVATE_KEY` in `.env` and `apps/server/.env`.
+2. **LLM Agentic Reasoning & RCA Engine (`packages/agent`)**:
+   - Built `runRcaEngine()` in [`packages/agent/src/index.ts`](file:///C:/Users/abhin/OneDrive/Desktop/ai-cohort/projects/atom/packages/agent/src/index.ts) using OpenAI structured output (`gpt-4o`/`o3-mini`).
+   - Generates evidence-anchored Root Cause Analysis, line-level code citations (`filePath`, `startLine`, `endLine`), valid unified diff patches (`--- a/... +++ b/...`), and automated unit test cases.
+3. **Database Persistence & Runs API (`apps/server`)**:
+   - Updated [`apps/server/src/routes/issues.ts`](file:///C:/Users/abhin/OneDrive/Desktop/ai-cohort/projects/atom/apps/server/src/routes/issues.ts) to manage issue execution runs, save `rca_results` and `citations` in Neon Postgres, and execute agent analysis.
+   - Built [`apps/server/src/routes/runs.ts`](file:///C:/Users/abhin/OneDrive/Desktop/ai-cohort/projects/atom/apps/server/src/routes/runs.ts):
+     - `GET /api/runs/:id`: Get run status, RCA results, patch diffs, and evidence citations.
+     - `GET /api/runs/:id/stream`: Live Server-Sent Events (SSE) agent step trace stream.
+     - `POST /api/runs/:id/publish`: Publish analysis & patch as issue comment or pull request via Octokit.
+
 ---
 
 ## 6. Background Job Queue Architecture (Redis + BullMQ)
@@ -145,13 +159,10 @@ pnpm docker:down     # Stop local Docker containers
 
 ---
 
-## 7. Next Steps (Phase 4 & Phase 5)
+## 7. Next Steps (Phase 7)
 
-1. **Phase 4 — Hybrid RAG Retrieval Engine**:
-   - HyDE (Hypothetical Document Embeddings): LLM generates hypothetical code fix from GitHub issue text, then embeds it.
-   - Dense Vector Search (pgvector cosine similarity) + Sparse Keyword Search (FTS / BM25).
-   - Reciprocal Rank Fusion (RRF) search merger & Cohere cross-encoder reranker.
-2. **Phase 5 — LLM Agentic Reasoning Engine**:
-   - Zod structured output schema (`rootCause`, `confidence`, `citations`, `patchDiff`, `testPatch`).
-   - File:Line evidence citation generator mapping claims to chunk line ranges & git blame commits.
-   - Unified diff patch generator & automated unit test generator.
+1. **Phase 7 — Frontend Dashboard & Issue Workbench**:
+   - Issue Workbench UI in Next.js (`apps/web`): Live agent progress trace via SSE.
+   - Syntax-highlighted code evidence panel with line-level citations.
+   - Side-by-side diff viewer for proposed patch (`react-diff-viewer-continued`).
+   - One-click GitHub Publish button (Create PR / Post Comment).
