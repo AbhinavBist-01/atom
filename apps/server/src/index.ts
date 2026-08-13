@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import webhookRouter from "./webhooks/github.js";
 import reposRouter from "./routes/repos.js";
 import issuesRouter from "./routes/issues.js";
+import runsRouter from "./routes/runs.js";
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use("/webhooks/github", webhookRouter);
 app.use("/api/repos", reposRouter);
 app.use("/api/issues", issuesRouter);
+app.use("/api/runs", runsRouter);
 
 app.get("/health", (_req, res) => {
   res.json({
