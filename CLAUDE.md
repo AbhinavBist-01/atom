@@ -1,7 +1,7 @@
 # CLAUDE.md — ATOM Project Summary & Status
 
 ## 1. Executive Summary & Status
-- **Status**: Phase 5 Complete (GitHub App Auth, Agentic RCA Engine, Database Persistence & Runs API)
+- **Status**: Phase 7 Complete (Frontend Dashboard & Issue Workbench UI)
 - **Monorepo Manager**: `pnpm` workspaces (`pnpm-workspace.yaml`)
 - **Node Version**: >= 20.0.0
 
@@ -147,6 +147,23 @@ pnpm docker:down     # Stop local Docker containers
      - `GET /api/runs/:id/stream`: Live Server-Sent Events (SSE) agent step trace stream.
      - `POST /api/runs/:id/publish`: Publish analysis & patch as issue comment or pull request via Octokit.
 
+### Phase 7 — Frontend Dashboard & Issue Workbench (`apps/web`)
+1. **Top Navbar & System Navigation (`apps/web/app/layout.tsx`)**:
+   - Modern dark-mode layout with status indicator ("Server Online"), breadcrumb links (Dashboard, Repositories, Issue Workbench).
+2. **Repository Management Workbench (`apps/web/app/repos/page.tsx`)**:
+   - Repository intake form with live status badges (`Ready`, `Indexing`, `Pending`, `Error`).
+   - Manual re-indexing & repository disconnection actions wired to REST API (`/api/repos`).
+3. **Issue Directory & Intake (`apps/web/app/issues/page.tsx`)**:
+   - Quick URL parser (`https://github.com/owner/repo/issues/number`) and manual intake router.
+4. **Issue Workbench Core View (`apps/web/app/issues/[owner]/[repo]/[number]/page.tsx`)**:
+   - Issue metadata header with direct link to GitHub.
+   - One-click **"Run ATOM Agent"** execution trigger.
+   - **Live Agent Execution Progress Trace** console.
+   - **Root Cause Analysis (RCA)** display with Confidence Score pill (`HIGH`, `MEDIUM`, `LOW`).
+   - **Line-Level Code Evidence Citations Grid** (`filePath`, `startLine`, `endLine`, `commitHash`).
+   - **Unified Diff Patch Viewer** & **Automated Unit Test Suite** patch viewer.
+   - **Publish Resolution Action Bar**: One-click "Post Comment on GitHub" (via Octokit) and "Create Pull Request".
+
 ---
 
 ## 6. Background Job Queue Architecture (Redis + BullMQ)
@@ -159,10 +176,8 @@ pnpm docker:down     # Stop local Docker containers
 
 ---
 
-## 7. Next Steps (Phase 7)
+## 7. Next Steps (Phase 8 — Validation & Benchmarking)
 
-1. **Phase 7 — Frontend Dashboard & Issue Workbench**:
-   - Issue Workbench UI in Next.js (`apps/web`): Live agent progress trace via SSE.
-   - Syntax-highlighted code evidence panel with line-level citations.
-   - Side-by-side diff viewer for proposed patch (`react-diff-viewer-continued`).
-   - One-click GitHub Publish button (Create PR / Post Comment).
+1. **Phase 8 — Validation & Sandboxed Benchmarking**:
+   - Sandboxed test runner: apply patch $\rightarrow$ run test suite $\rightarrow$ report pass/fail.
+   - Benchmarking on SWE-bench Lite subset (track patch acceptance rate & RCA citation accuracy).
