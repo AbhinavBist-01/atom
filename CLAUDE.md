@@ -150,8 +150,10 @@ pnpm docker:down     # Stop local Docker containers
 ### Phase 7 — Monochrome Glassmorphism UI & GitHub Authentication (`apps/web`)
 1. **Glassmorphic Black, White & Gray Design System (`apps/web/app/globals.css`)**:
    - High-contrast obsidian backgrounds (`#050507`), pure white highlights (`#ffffff`), and translucent glass cards (`backdrop-filter: blur(20px)`, `border: 1px solid rgba(255,255,255,0.08)`).
-2. **GitHub OAuth Authentication Flow (`apps/web/app/page.tsx`)**:
+2. **GitHub OAuth Authentication Flow (`apps/web/app/page.tsx` & `apps/server`)**:
    - Glassmorphic Hero Landing Page featuring **"Sign in with GitHub"** button integrated with Better Auth (`/api/auth/sign-in/github`).
+   - Fixed ES Module hoisting order in `apps/server/src/auth.ts` by ensuring `dotenv.config()` executes before `betterAuth(...)` reads `GITHUB_CLIENT_ID`.
+   - Mounted `toNodeHandler(auth)` on Express (`/api/auth/*`) in `apps/server/src/index.ts`.
    - Authenticated redirection flow leading straight to the **Main Workspace** (`/workspace`).
 3. **Main Workspace & GitHub App Access (`apps/web/app/workspace/page.tsx`)**:
    - **"Connect / Install GitHub App"** CTA button linking to GitHub App installation flow.
