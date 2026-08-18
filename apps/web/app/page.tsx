@@ -28,9 +28,14 @@ export default function LandingPage() {
 
   const handleGitHubSignIn = async () => {
     setAuthenticating(true);
+    const callbackURL =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/workspace`
+        : "http://localhost:3000/workspace";
+
     await signIn.social({
       provider: "github",
-      callbackURL: "/workspace",
+      callbackURL,
     });
   };
 

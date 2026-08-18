@@ -117,4 +117,49 @@ export class AtomGitHubClient {
       .filter((item) => item.type === "blob" && item.path)
       .map((item) => item.path as string);
   }
+
+  async listUserRepos(username: string): Promise<Array<{ id: number; name: string; fullName: string; owner: string; private: boolean; description?: string | null; language?: string | null }>> {
+    try {
+      const { data } = await this.octokit.repos.listForUser({
+        username,
+        sort: "updated",
+        per_page: 100,
+      });
+
+      return data.map((r) => ({
+        id: r.id,
+        name: r.name,
+        fullName: r.full_name,
+        owner: r.owner.login,
+        private: r.private,
+        description: r.description,
+        language: r.language,
+      }));
+    } catch (err) {
+      console.warn(`[GitHub Client] Failed to fetch repos for user ${username}:`, err);
+      return [];
+    }
+  }
+
+  async listInstallationRepos(installationId: number): Promise<Array<{ id: number; name: string; fullName: string; owner: string; private: boolean; description?: string | null; language?: string | null }>> {
+    try {
+      const { data } = await this.octokit.apps.listReposAccessibleToInstallation({
+        installation_id: installationId,
+        per_page: 100,
+      });
+
+      return data.repositories.map((r) => ({
+        id: r.id,
+        name: r.name,
+        fullName: r.full_name,
+        owner: r.owner.login,
+        private: r.private,
+        description: r.description,
+        language: r.language,
+      }));
+    } catch (err) {
+      console.warn(`[GitHub Client] Failed to fetch repos for installation ${installationId}:`, err);
+      return [];
+    }
+  }
 }
