@@ -119,9 +119,12 @@ export class AtomGitHubClient {
   }
 
   async listUserRepos(username: string): Promise<Array<{ id: number; name: string; fullName: string; owner: string; private: boolean; description?: string | null; language?: string | null }>> {
+    const cleanUsername = username.trim().replace(/\s+/g, "");
+    if (!cleanUsername) return [];
+
     try {
       const { data } = await this.octokit.repos.listForUser({
-        username,
+        username: cleanUsername,
         sort: "updated",
         per_page: 100,
       });
@@ -136,7 +139,44 @@ export class AtomGitHubClient {
         language: r.language,
       }));
     } catch (err) {
-      console.warn(`[GitHub Client] Failed to fetch repos for user ${username}:`, err);
+      console.warn(`[GitHub Client] listForUser failed for ${cleanUsername}, attempting raw fetch:`, err);
+      try {
+        const res = await fetch(`https://api.github.com/users/${encodeURIComponent(cleanUsername)}/repos?per_page=100&sort=updated`, {
+          headers: { "User-Agent": "ATOM-Agent" }
+        });
+        if (res.ok) {
+          const raw = await res.json();
+          if (Array.isArray(raw)) {
+            return raw.map((r: any) => ({
+              id: r.id,
+              name: r.name,
+              fullName: r.full_name,
+              owner: r.owner?.login || cleanUsername,
+              private: !!r.private,
+              description: r.description,
+              language: r.language,
+            }));
+          }
+        }
+      } catch (fetchErr) {
+        console.warn(`[GitHub Client] Raw fetch failed for ${cleanUsername}:`, fetchErr);
+      }
+      return [];
+    }
+  }
+
+  async listAllAppRepos(): Promise<Array<{ id: number; name: string; fullName: string; owner: string; private: boolean; description?: string | null; language?: string | null }>> {
+    try {
+      const { data: installations } = await this.octokit.apps.listInstallations();
+      const allRepos: Array<{ id: number; name: string; fullName: string; owner: string; private: boolean; description?: string | null; language?: string | null }> = [];
+
+      for (const inst of installations) {
+        const repos = await this.listInstallationRepos(inst.id);
+        allRepos.push(...repos);
+      }
+      return allRepos;
+    } catch (err) {
+      console.warn("[GitHub Client] Failed to list app installation repos:", err);
       return [];
     }
   }

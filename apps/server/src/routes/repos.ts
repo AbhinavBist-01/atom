@@ -3,7 +3,73 @@ import { db, schema } from "../db/index.js";
 import { eq } from "drizzle-orm";
 import { indexRepoTask } from "../jobs/indexRepo.js";
 
+import { AtomGitHubClient } from "@atom/github";
+
 const router: Router = Router();
+
+// GET /api/repos/github-repos - Fetch user's GitHub repositories for the dropdown menu
+router.get("/github-repos", async (req: Request, res: Response): Promise<void> => {
+  const username = typeof req.query.username === "string" ? req.query.username.trim() : "";
+
+  try {
+    const appId = process.env.GITHUB_APP_ID;
+    const privateKey = process.env.GITHUB_APP_PRIVATE_KEY;
+
+    let githubClient: AtomGitHubClient;
+    if (appId && privateKey) {
+      githubClient = new AtomGitHubClient({
+        appAuth: {
+          appId,
+          privateKey,
+        },
+      });
+    } else {
+      githubClient = new AtomGitHubClient();
+    }
+
+    const reposMap = new Map<string, {
+      id: number;
+      name: string;
+      fullName: string;
+      owner: string;
+      private: boolean;
+      description?: string | null;
+      language?: string | null;
+    }>();
+
+    // 1. If GitHub App is configured, fetch all repos where the GitHub App is installed
+    if (appId && privateKey) {
+      try {
+        const appRepos = await githubClient.listAllAppRepos();
+        for (const r of appRepos) {
+          reposMap.set(r.fullName.toLowerCase(), r);
+        }
+      } catch (err) {
+        console.warn("[Repos Router] App repos fetch warning:", err);
+      }
+    }
+
+    // 2. If username/handle provided, also fetch public repositories for that user/org
+    if (username) {
+      try {
+        const userRepos = await githubClient.listUserRepos(username);
+        for (const r of userRepos) {
+          if (!reposMap.has(r.fullName.toLowerCase())) {
+            reposMap.set(r.fullName.toLowerCase(), r);
+          }
+        }
+      } catch (err) {
+        console.warn(`[Repos Router] User repos fetch warning for ${username}:`, err);
+      }
+    }
+
+    const reposList = Array.from(reposMap.values());
+    res.json({ githubRepos: reposList });
+  } catch (error: any) {
+    console.error("[Repos Router] Failed to fetch GitHub repos:", error);
+    res.status(500).json({ error: "Failed to fetch GitHub repositories", message: error.message });
+  }
+});
 
 // GET /api/repos - List connected repositories
 router.get("/", async (_req: Request, res: Response): Promise<void> => {
