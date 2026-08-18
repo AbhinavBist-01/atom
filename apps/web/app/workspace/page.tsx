@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { FolderGit2, Plus, RefreshCw, Trash2, CheckCircle2, AlertTriangle, Loader2, Github, ExternalLink, ArrowRight, Sparkles, Shield } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { FolderGit2, Plus, RefreshCw, Trash2, CheckCircle2, AlertTriangle, Loader2, Github, ExternalLink, ArrowRight, Shield } from "lucide-react";
+import { useSession } from "@/lib/auth-client";
 
 interface Repository {
   id: string;
@@ -14,11 +16,20 @@ interface Repository {
 }
 
 export default function WorkspacePage() {
+  const router = useRouter();
+  const { data: session, isPending } = useSession();
   const [repos, setRepos] = useState<Repository[]>([]);
   const [ownerInput, setOwnerInput] = useState("");
   const [repoInput, setRepoInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Client-side auth guard (middleware is the primary gate)
+  useEffect(() => {
+    if (!isPending && !session?.user) {
+      router.replace("/");
+    }
+  }, [session, isPending, router]);
 
   const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:4000";
 
@@ -113,6 +124,15 @@ export default function WorkspacePage() {
         );
     }
   };
+
+  // Show spinner while checking session or while redirecting
+  if (isPending || !session?.user) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-6 h-6 text-zinc-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 py-2">
