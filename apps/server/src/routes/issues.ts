@@ -6,6 +6,33 @@ import { eq, and } from "drizzle-orm";
 
 const router: Router = Router();
 
+// GET /api/issues/:owner/:repo -> List issues for a repository
+router.get("/:owner/:repo", async (req: Request, res: Response): Promise<void> => {
+  const owner = req.params.owner as string;
+  const repo = req.params.repo as string;
+  const state = (req.query.state as "open" | "closed" | "all") || "open";
+
+  const appId = process.env.GITHUB_APP_ID;
+  const privateKey = process.env.GITHUB_APP_PRIVATE_KEY;
+
+  let client: AtomGitHubClient;
+  if (appId && privateKey) {
+    client = new AtomGitHubClient({
+      appAuth: { appId, privateKey },
+    });
+  } else {
+    client = new AtomGitHubClient();
+  }
+
+  try {
+    const issues = await client.listIssues({ owner, repo }, state);
+    res.json({ issues, owner, repo });
+  } catch (error: any) {
+    console.error(`[Issues Router] Failed to fetch issues for ${owner}/${repo}:`, error);
+    res.status(500).json({ error: "Failed to fetch issues from GitHub", message: error.message });
+  }
+});
+
 // GET /api/issues/:owner/:repo/:number -> Get issue details
 router.get("/:owner/:repo/:number", async (req: Request, res: Response): Promise<void> => {
   const owner = req.params.owner as string;
@@ -17,7 +44,18 @@ router.get("/:owner/:repo/:number", async (req: Request, res: Response): Promise
     return;
   }
 
-  const client = new AtomGitHubClient();
+  const appId = process.env.GITHUB_APP_ID;
+  const privateKey = process.env.GITHUB_APP_PRIVATE_KEY;
+
+  let client: AtomGitHubClient;
+  if (appId && privateKey) {
+    client = new AtomGitHubClient({
+      appAuth: { appId, privateKey },
+    });
+  } else {
+    client = new AtomGitHubClient();
+  }
+
   try {
     const issue = await client.getIssue({ owner, repo }, issueNumber);
     res.json({ issue });

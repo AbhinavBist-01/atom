@@ -19,8 +19,9 @@ import {
   Search,
   Lock,
   Globe,
-  Code2,
   Check,
+  Sparkles,
+  Layers,
 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 
@@ -51,7 +52,7 @@ export default function WorkspacePage() {
   // Intake mode: 'dropdown' or 'manual'
   const [inputMode, setInputMode] = useState<"dropdown" | "manual">("dropdown");
   
-  // GitHub Repos from dropdown
+  // GitHub Repos from dropdown / synced account
   const [githubRepos, setGithubRepos] = useState<GitHubRepoItem[]>([]);
   const [usernameInput, setUsernameInput] = useState("");
   const [loadingGithubRepos, setLoadingGithubRepos] = useState(false);
@@ -64,6 +65,7 @@ export default function WorkspacePage() {
   const [repoInput, setRepoInput] = useState("");
   
   const [loading, setLoading] = useState(false);
+  const [connectingRepoId, setConnectingRepoId] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
 
   // Client-side auth guard (middleware is the primary gate)
@@ -89,14 +91,23 @@ export default function WorkspacePage() {
 
   const fetchGithubRepos = async (customUser?: string) => {
     const targetUser = customUser !== undefined ? customUser.trim() : usernameInput.trim();
+    const userImage = session?.user?.image || "";
+    const userEmail = session?.user?.email || "";
 
     setLoadingGithubRepos(true);
     try {
-      const queryParam = targetUser ? `?username=${encodeURIComponent(targetUser)}` : "";
-      const res = await fetch(`${SERVER_URL}/api/repos/github-repos${queryParam}`);
+      const params = new URLSearchParams();
+      if (targetUser) params.set("username", targetUser);
+      if (userImage) params.set("image", userImage);
+      if (userEmail) params.set("email", userEmail);
+
+      const res = await fetch(`${SERVER_URL}/api/repos/github-repos?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setGithubRepos(data.githubRepos || []);
+        if (data.resolvedLogin) {
+          setUsernameInput(data.resolvedLogin);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch user GitHub repos:", err);
@@ -128,6 +139,15 @@ export default function WorkspacePage() {
     );
   }, [githubRepos, searchTerm]);
 
+  // Set of connected repo full names for quick lookup
+  const connectedSet = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of repos) {
+      set.add(`${r.owner}/${r.repo}`.toLowerCase());
+    }
+    return set;
+  }, [repos]);
+
   const handleSelectDropdownRepo = (repo: GitHubRepoItem) => {
     setSelectedGithubRepo(repo);
     setOwnerInput(repo.owner);
@@ -135,13 +155,16 @@ export default function WorkspacePage() {
     setDropdownOpen(false);
   };
 
-  const handleConnectRepo = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const finalOwner = ownerInput.trim();
-    const finalRepo = repoInput.trim();
+  const handleConnectRepoDirect = async (owner: string, repo: string, repoIdNumeric?: number) => {
+    const finalOwner = owner.trim();
+    const finalRepo = repo.trim();
     if (!finalOwner || !finalRepo) return;
 
-    setLoading(true);
+    if (repoIdNumeric !== undefined) {
+      setConnectingRepoId(repoIdNumeric);
+    } else {
+      setLoading(true);
+    }
     setErrorMsg("");
 
     try {
@@ -164,7 +187,13 @@ export default function WorkspacePage() {
       setErrorMsg(err.message || "Failed to connect repository");
     } finally {
       setLoading(false);
+      setConnectingRepoId(null);
     }
+  };
+
+  const handleConnectRepo = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    handleConnectRepoDirect(ownerInput, repoInput);
   };
 
   const handleReindex = async (id: string) => {
@@ -224,7 +253,7 @@ export default function WorkspacePage() {
   }
 
   return (
-    <div className="space-y-8 py-2">
+    <div className="space-y-10 py-2">
       {/* Workspace Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6">
         <div>
@@ -233,32 +262,41 @@ export default function WorkspacePage() {
             <span>ATOM Main Workspace</span>
           </h1>
           <p className="text-sm text-zinc-400 mt-1">
-            Select repositories from your GitHub account, index codebases with AST chunking, and run autonomous issue resolution.
+            Synced repositories from your GitHub account. Select and index any repository to start autonomous issue resolution.
           </p>
         </div>
 
-        <a
-          href="https://github.com/apps/atom-ai-agent/installations/new"
-          target="_blank"
-          rel="noreferrer"
-          className="glass-button-primary px-5 py-2.5 text-xs rounded-xl font-semibold flex items-center space-x-2 shrink-0 justify-center"
-        >
-          <Github className="w-4 h-4" />
-          <span>Connect / Install GitHub App</span>
-          <ExternalLink className="w-3 h-3 ml-1" />
-        </a>
+        <div className="flex items-center space-x-3">
+          <a
+            href="https://github.com/apps/atom-ai-agent/installations/new"
+            target="_blank"
+            rel="noreferrer"
+            className="glass-button-secondary px-4 py-2 text-xs rounded-xl font-semibold flex items-center space-x-2 shrink-0 justify-center"
+          >
+            <Github className="w-4 h-4" />
+            <span>Install GitHub App</span>
+            <ExternalLink className="w-3 h-3 ml-1" />
+          </a>
+        </div>
       </div>
 
-      {/* Connect Repository Section */}
-      <div className="glass-panel p-6 rounded-2xl border border-white/10 space-y-5">
+      {/* ========================================================================= */}
+      {/* 1. SYNCED GITHUB REPOSITORIES (TOP COMPONENT)                              */}
+      {/* ========================================================================= */}
+      <section className="glass-panel p-6 rounded-2xl border border-white/10 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-4">
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center space-x-2">
-            <Plus className="w-4 h-4 text-white" />
-            <span>Add Repository Access</span>
-          </h2>
+          <div className="space-y-1">
+            <h2 className="text-base font-bold text-white flex items-center space-x-2">
+              <Github className="w-5 h-5 text-white" />
+              <span>Synced GitHub Repositories</span>
+            </h2>
+            <p className="text-xs text-zinc-400">
+              Repositories automatically fetched from your GitHub account (@{usernameInput || session.user.name || "user"}).
+            </p>
+          </div>
 
           {/* Mode Switcher Tabs */}
-          <div className="flex items-center space-x-1 bg-white/5 p-1 rounded-xl border border-white/10 text-xs">
+          <div className="flex items-center space-x-1 bg-white/5 p-1 rounded-xl border border-white/10 text-xs shrink-0">
             <button
               onClick={() => setInputMode("dropdown")}
               className={`px-3 py-1.5 rounded-lg font-medium transition ${
@@ -267,7 +305,7 @@ export default function WorkspacePage() {
                   : "text-zinc-400 hover:text-white"
               }`}
             >
-              Select from GitHub Dropdown
+              Dropdown Selector
             </button>
             <button
               onClick={() => setInputMode("manual")}
@@ -282,14 +320,14 @@ export default function WorkspacePage() {
           </div>
         </div>
 
-        {/* DROPDOWN MODE */}
+        {/* DROPDOWN SELECTOR MODE */}
         {inputMode === "dropdown" && (
           <div className="space-y-4">
             {/* Account / Org handle bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-black/40 rounded-xl border border-white/10">
-              <div className="flex items-center space-x-2 flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-black/40 rounded-xl border border-white/10">
+              <div className="flex items-center space-x-2.5 flex-1">
                 <Github className="w-4 h-4 text-zinc-400 shrink-0" />
-                <span className="text-xs text-zinc-300 font-medium shrink-0">GitHub Username / Org:</span>
+                <span className="text-xs text-zinc-300 font-medium shrink-0">GitHub Handle / Org:</span>
                 <input
                   type="text"
                   placeholder="e.g. AbhinavBist-01"
@@ -301,7 +339,7 @@ export default function WorkspacePage() {
                       fetchGithubRepos();
                     }
                   }}
-                  className="bg-black/60 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-white/30 flex-1 max-w-xs"
+                  className="bg-black/60 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-white/30 flex-1 max-w-xs font-mono"
                 />
               </div>
               <button
@@ -311,7 +349,7 @@ export default function WorkspacePage() {
                 className="glass-button-secondary px-3.5 py-1.5 text-xs rounded-lg flex items-center space-x-1.5 shrink-0 self-end sm:self-auto font-medium"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingGithubRepos ? "animate-spin" : ""}`} />
-                <span>{loadingGithubRepos ? "Loading..." : "Load Repositories"}</span>
+                <span>{loadingGithubRepos ? "Syncing..." : "Sync Repos"}</span>
               </button>
             </div>
 
@@ -320,10 +358,10 @@ export default function WorkspacePage() {
               <span>
                 {loadingGithubRepos
                   ? "Fetching repositories from GitHub..."
-                  : `Found ${githubRepos.length} repositories`}
+                  : `Found ${githubRepos.length} repositories for @${usernameInput || "user"}`}
               </span>
               <span className="text-[11px] text-zinc-500 font-mono">
-                Click below to select
+                Click below to select & index
               </span>
             </div>
 
@@ -334,7 +372,7 @@ export default function WorkspacePage() {
                 className="w-full px-4 py-3 bg-black/60 border border-white/10 hover:border-white/20 rounded-xl cursor-pointer flex items-center justify-between text-sm text-white transition"
               >
                 <div className="flex items-center space-x-3 truncate">
-                  <Github className="w-4 h-4 text-zinc-400 shrink-0" />
+                  <FolderGit2 className="w-4 h-4 text-zinc-400 shrink-0" />
                   {selectedGithubRepo ? (
                     <div className="flex items-center space-x-2 truncate">
                       <span className="font-semibold text-white">{selectedGithubRepo.fullName}</span>
@@ -343,14 +381,19 @@ export default function WorkspacePage() {
                           {selectedGithubRepo.language}
                         </span>
                       )}
+                      {connectedSet.has(selectedGithubRepo.fullName.toLowerCase()) && (
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          Already Connected
+                        </span>
+                      )}
                     </div>
                   ) : (
                     <span className="text-zinc-500">
                       {loadingGithubRepos
-                        ? "Loading repositories from GitHub..."
+                        ? "Syncing repositories from GitHub..."
                         : githubRepos.length === 0
-                        ? "No repositories found (click Refresh or use Custom Repo)"
-                        : "Click to select a repository..."}
+                        ? "No repositories found (click Sync Repos or use Custom Repo)"
+                        : "Click to select a repository from dropdown..."}
                     </span>
                   )}
                 </div>
@@ -368,7 +411,7 @@ export default function WorkspacePage() {
                     <Search className="w-4 h-4 text-zinc-400 shrink-0" />
                     <input
                       type="text"
-                      placeholder="Search your repositories or language..."
+                      placeholder="Search repositories or language..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full bg-transparent text-xs text-white placeholder-zinc-500 focus:outline-none"
@@ -382,12 +425,13 @@ export default function WorkspacePage() {
                       <div className="p-6 text-center text-xs text-zinc-500 space-y-1">
                         <p>No matching repositories found.</p>
                         <p className="text-[11px] text-zinc-600">
-                          Make sure your GitHub username is correct or switch to "Custom / Public Repo".
+                          Type a search query or switch to "Custom / Public Repo".
                         </p>
                       </div>
                     ) : (
                       filteredGithubRepos.map((repo) => {
                         const isSelected = selectedGithubRepo?.id === repo.id;
+                        const isAlreadyConnected = connectedSet.has(repo.fullName.toLowerCase());
                         return (
                           <div
                             key={repo.id}
@@ -415,6 +459,11 @@ export default function WorkspacePage() {
                                     {repo.language}
                                   </span>
                                 )}
+                                {isAlreadyConnected && (
+                                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                    Connected
+                                  </span>
+                                )}
                               </div>
                               {repo.description && (
                                 <p className="text-[11px] text-zinc-400 truncate">{repo.description}</p>
@@ -430,23 +479,39 @@ export default function WorkspacePage() {
               )}
             </div>
 
-            {/* Action button for selected dropdown repo */}
+            {/* Selected Dropdown Repo Action Card */}
             {selectedGithubRepo && (
-              <div className="flex items-center justify-between p-3.5 bg-white/5 rounded-xl border border-white/10">
-                <div className="flex items-center space-x-2 text-xs text-zinc-300">
-                  <CheckCircle2 className="w-4 h-4 text-white" />
-                  <span>
-                    Selected: <strong className="text-white">{selectedGithubRepo.fullName}</strong>
-                  </span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-white/5 rounded-xl border border-white/10">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2 text-xs text-zinc-300">
+                    <CheckCircle2 className="w-4 h-4 text-white" />
+                    <span>Selected: <strong className="text-white">{selectedGithubRepo.fullName}</strong></span>
+                  </div>
+                  {selectedGithubRepo.description && (
+                    <p className="text-[11px] text-zinc-400">{selectedGithubRepo.description}</p>
+                  )}
                 </div>
-                <button
-                  onClick={() => handleConnectRepo()}
-                  disabled={loading}
-                  className="glass-button-primary px-5 py-2 text-xs rounded-xl font-semibold flex items-center space-x-2 disabled:opacity-50"
-                >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderGit2 className="w-4 h-4" />}
-                  <span>Connect & Index Repository</span>
-                </button>
+
+                <div className="flex items-center space-x-2 shrink-0">
+                  {connectedSet.has(selectedGithubRepo.fullName.toLowerCase()) ? (
+                    <Link
+                      href={`/issues?owner=${selectedGithubRepo.owner}&repo=${selectedGithubRepo.name}`}
+                      className="glass-button-primary px-5 py-2 text-xs rounded-xl font-semibold flex items-center space-x-1.5"
+                    >
+                      <span>Open Workbench Issues</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => handleConnectRepoDirect(selectedGithubRepo.owner, selectedGithubRepo.name)}
+                      disabled={loading}
+                      className="glass-button-primary px-5 py-2 text-xs rounded-xl font-semibold flex items-center space-x-2 disabled:opacity-50"
+                    >
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                      <span>Connect & Index Repository</span>
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -459,7 +524,7 @@ export default function WorkspacePage() {
               <label className="block text-xs font-medium text-zinc-400 mb-1">Owner / Organization</label>
               <input
                 type="text"
-                placeholder="facebook or your-username"
+                placeholder="facebook or your-org"
                 value={ownerInput}
                 onChange={(e) => setOwnerInput(e.target.value)}
                 className="w-full px-3.5 py-2 text-sm bg-black/60 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:border-white/30"
@@ -491,30 +556,46 @@ export default function WorkspacePage() {
         )}
 
         {errorMsg && <p className="text-xs text-red-400 mt-2">{errorMsg}</p>}
-      </div>
+      </section>
 
-      {/* Connected Repositories Grid */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-white flex items-center space-x-2">
-            <Shield className="w-4 h-4 text-white" />
-            <span>Connected GitHub Repositories</span>
-          </h2>
-          <span className="text-xs text-zinc-500 font-mono">{repos.length} Repositories Active</span>
+      {/* ========================================================================= */}
+      {/* 2. CONNECTED & INDEXED REPOSITORIES (BOTTOM COMPONENT)                     */}
+      {/* ========================================================================= */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+          <div className="flex items-center space-x-3">
+            <div className="p-1.5 bg-white/5 rounded-lg border border-white/10">
+              <Shield className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white">
+                Connected & Active Repositories
+              </h2>
+              <p className="text-xs text-zinc-400">
+                Codebases indexed in pgvector and ready for autonomous issue resolution.
+              </p>
+            </div>
+          </div>
+          <span className="text-xs text-zinc-400 font-mono bg-white/5 px-2.5 py-1 rounded-lg border border-white/10">
+            {repos.length} Connected
+          </span>
         </div>
 
         {repos.length === 0 ? (
           <div className="glass-card p-12 text-center rounded-2xl border border-white/10 space-y-3">
-            <FolderGit2 className="w-10 h-10 text-zinc-600 mx-auto" />
-            <p className="text-sm font-semibold text-zinc-300">No repositories connected yet</p>
+            <Layers className="w-10 h-10 text-zinc-600 mx-auto" />
+            <p className="text-sm font-semibold text-zinc-300">No active repositories connected yet</p>
             <p className="text-xs text-zinc-500 max-w-md mx-auto">
-              Select a repository from the dropdown menu above to index its code and start autonomous issue resolution.
+              Select any repository from the Synced Repositories section above to index its AST chunks and start autonomous bug resolution.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {repos.map((repo) => (
-              <div key={repo.id} className="glass-card p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4">
+              <div
+                key={repo.id}
+                className="glass-card p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4"
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="p-2.5 bg-white/5 rounded-xl border border-white/10">
@@ -532,7 +613,7 @@ export default function WorkspacePage() {
                   {renderStatusBadge(repo.status)}
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                <div className="flex items-center justify-between pt-3 border-t border-white/5">
                   <Link
                     href={`/issues?owner=${repo.owner}&repo=${repo.repo}`}
                     className="text-xs font-semibold text-white hover:underline flex items-center space-x-1"
@@ -563,7 +644,7 @@ export default function WorkspacePage() {
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

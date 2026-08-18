@@ -10,6 +10,8 @@ const router: Router = Router();
 // GET /api/repos/github-repos - Fetch user's GitHub repositories for the dropdown menu
 router.get("/github-repos", async (req: Request, res: Response): Promise<void> => {
   const username = typeof req.query.username === "string" ? req.query.username.trim() : "";
+  const email = typeof req.query.email === "string" ? req.query.email.trim() : "";
+  const image = typeof req.query.image === "string" ? req.query.image.trim() : "";
 
   try {
     const appId = process.env.GITHUB_APP_ID;
@@ -49,22 +51,24 @@ router.get("/github-repos", async (req: Request, res: Response): Promise<void> =
       }
     }
 
-    // 2. If username/handle provided, also fetch public repositories for that user/org
-    if (username) {
+    // 2. Resolve exact GitHub login handle automatically
+    const resolvedLogin = await githubClient.resolveUserLogin({ username, email, image });
+    if (resolvedLogin) {
+      console.log(`[Repos Router] Resolved GitHub login: '${resolvedLogin}'`);
       try {
-        const userRepos = await githubClient.listUserRepos(username);
+        const userRepos = await githubClient.listUserRepos(resolvedLogin);
         for (const r of userRepos) {
           if (!reposMap.has(r.fullName.toLowerCase())) {
             reposMap.set(r.fullName.toLowerCase(), r);
           }
         }
       } catch (err) {
-        console.warn(`[Repos Router] User repos fetch warning for ${username}:`, err);
+        console.warn(`[Repos Router] User repos fetch warning for ${resolvedLogin}:`, err);
       }
     }
 
     const reposList = Array.from(reposMap.values());
-    res.json({ githubRepos: reposList });
+    res.json({ githubRepos: reposList, resolvedLogin });
   } catch (error: any) {
     console.error("[Repos Router] Failed to fetch GitHub repos:", error);
     res.status(500).json({ error: "Failed to fetch GitHub repositories", message: error.message });

@@ -31,9 +31,12 @@ export interface GitHubAppAuthConfig {
 
 export class AtomGitHubClient {
   private octokit!: Octokit;
+  private appAuthConfig?: GitHubAppAuthConfig;
+  private token?: string;
 
   constructor(config?: { token?: string; appAuth?: GitHubAppAuthConfig }) {
     let initialized = false;
+    this.token = config?.token;
 
     if (config?.appAuth && config.appAuth.appId && config.appAuth.privateKey) {
       try {
@@ -49,6 +52,12 @@ export class AtomGitHubClient {
         cleanKey = cleanKey.replace(/\\n/g, "\n");
 
         if (cleanKey.includes("BEGIN") && cleanKey.includes("PRIVATE KEY")) {
+          this.appAuthConfig = {
+            appId: config.appAuth.appId,
+            privateKey: cleanKey,
+            installationId: config.appAuth.installationId,
+          };
+
           this.octokit = new Octokit({
             authStrategy: createAppAuth,
             auth: {
@@ -69,6 +78,31 @@ export class AtomGitHubClient {
     }
   }
 
+  private async getInstallationOctokit(ref: RepoRef): Promise<Octokit> {
+    if (this.appAuthConfig) {
+      try {
+        const { data: installation } = await this.octokit.apps.getRepoInstallation({
+          owner: ref.owner,
+          repo: ref.repo,
+        });
+
+        if (installation?.id) {
+          return new Octokit({
+            authStrategy: createAppAuth,
+            auth: {
+              appId: this.appAuthConfig.appId,
+              privateKey: this.appAuthConfig.privateKey,
+              installationId: installation.id,
+            },
+          });
+        }
+      } catch (err: any) {
+        console.warn(`[AtomGitHubClient] Could not resolve installation for ${ref.owner}/${ref.repo}:`, err.message);
+      }
+    }
+    return this.octokit;
+  }
+
   async getIssue(ref: RepoRef, issueNumber: number): Promise<IssueDetails> {
     const { data } = await this.octokit.issues.get({
       owner: ref.owner,
@@ -87,8 +121,36 @@ export class AtomGitHubClient {
     };
   }
 
+  async listIssues(ref: RepoRef, state: "open" | "closed" | "all" = "open"): Promise<IssueDetails[]> {
+    try {
+      const { data } = await this.octokit.issues.listForRepo({
+        owner: ref.owner,
+        repo: ref.repo,
+        state,
+        per_page: 50,
+        sort: "updated",
+      });
+
+      return data
+        .filter((item) => !item.pull_request)
+        .map((d) => ({
+          number: d.number,
+          title: d.title,
+          body: d.body || "",
+          state: d.state,
+          author: d.user?.login || "unknown",
+          labels: d.labels.map((l) => (typeof l === "string" ? l : l.name || "")),
+          createdAt: d.created_at,
+        }));
+    } catch (err) {
+      console.warn(`[GitHub Client] Failed to list issues for ${ref.owner}/${ref.repo}:`, err);
+      return [];
+    }
+  }
+
   async createIssueComment(ref: RepoRef, issueNumber: number, body: string): Promise<void> {
-    await this.octokit.issues.createComment({
+    const octokit = await this.getInstallationOctokit(ref);
+    await octokit.issues.createComment({
       owner: ref.owner,
       repo: ref.repo,
       issue_number: issueNumber,
@@ -97,7 +159,8 @@ export class AtomGitHubClient {
   }
 
   async createPullRequest(ref: RepoRef, title: string, head: string, base: string, body: string): Promise<{ number: number; url: string }> {
-    const { data } = await this.octokit.pulls.create({
+    const octokit = await this.getInstallationOctokit(ref);
+    const { data } = await octokit.pulls.create({
       owner: ref.owner,
       repo: ref.repo,
       title,
@@ -138,6 +201,79 @@ export class AtomGitHubClient {
     return data.tree
       .filter((item) => item.type === "blob" && item.path)
       .map((item) => item.path as string);
+  }
+
+  async resolveUserLogin(input: { username?: string; email?: string; image?: string }): Promise<string | null> {
+    const { username, email, image } = input;
+
+    // 1. Try extracting numeric user ID from avatar URL (e.g. https://avatars.githubusercontent.com/u/178583190?v=4)
+    if (image) {
+      const match = image.match(/\/u\/(\d+)/);
+      if (match && match[1]) {
+        try {
+          const res = await fetch(`https://api.github.com/user/${match[1]}`, {
+            headers: { "User-Agent": "ATOM-Agent" },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.login) return data.login;
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
+
+    // 2. If username is given directly, check if https://api.github.com/users/${username} exists
+    if (username) {
+      const clean = username.trim().replace(/\s+/g, "");
+      try {
+        const res = await fetch(`https://api.github.com/users/${encodeURIComponent(clean)}`, {
+          headers: { "User-Agent": "ATOM-Agent" },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.login) return data.login;
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      // 3. Search users by query
+      try {
+        const res = await fetch(`https://api.github.com/search/users?q=${encodeURIComponent(username)}`, {
+          headers: { "User-Agent": "ATOM-Agent" },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.items && data.items.length > 0 && data.items[0].login) {
+            return data.items[0].login;
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    // 4. Try email prefix search
+    if (email) {
+      const prefix = email.split("@")[0];
+      try {
+        const res = await fetch(`https://api.github.com/search/users?q=${encodeURIComponent(prefix)}`, {
+          headers: { "User-Agent": "ATOM-Agent" },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.items && data.items.length > 0 && data.items[0].login) {
+            return data.items[0].login;
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    return null;
   }
 
   async listUserRepos(username: string): Promise<Array<{ id: number; name: string; fullName: string; owner: string; private: boolean; description?: string | null; language?: string | null }>> {
