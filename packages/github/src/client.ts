@@ -30,19 +30,41 @@ export interface GitHubAppAuthConfig {
 }
 
 export class AtomGitHubClient {
-  private octokit: Octokit;
+  private octokit!: Octokit;
 
   constructor(config?: { token?: string; appAuth?: GitHubAppAuthConfig }) {
+    let initialized = false;
+
     if (config?.appAuth && config.appAuth.appId && config.appAuth.privateKey) {
-      this.octokit = new Octokit({
-        authStrategy: createAppAuth,
-        auth: {
-          appId: config.appAuth.appId,
-          privateKey: config.appAuth.privateKey,
-          installationId: config.appAuth.installationId
+      try {
+        let cleanKey = config.appAuth.privateKey.trim();
+        // Remove enclosing quotes if any
+        if (
+          (cleanKey.startsWith('"') && cleanKey.endsWith('"')) ||
+          (cleanKey.startsWith("'") && cleanKey.endsWith("'"))
+        ) {
+          cleanKey = cleanKey.slice(1, -1);
         }
-      });
-    } else {
+        // Unescape literal \n into real newlines
+        cleanKey = cleanKey.replace(/\\n/g, "\n");
+
+        if (cleanKey.includes("BEGIN") && cleanKey.includes("PRIVATE KEY")) {
+          this.octokit = new Octokit({
+            authStrategy: createAppAuth,
+            auth: {
+              appId: config.appAuth.appId,
+              privateKey: cleanKey,
+              installationId: config.appAuth.installationId,
+            },
+          });
+          initialized = true;
+        }
+      } catch (err) {
+        console.warn("[AtomGitHubClient] App authentication initialization failed, falling back:", err);
+      }
+    }
+
+    if (!initialized) {
       this.octokit = new Octokit({ auth: config?.token });
     }
   }
