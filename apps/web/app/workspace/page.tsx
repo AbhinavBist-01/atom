@@ -55,6 +55,7 @@ export default function WorkspacePage() {
   // GitHub Repos from dropdown / synced account
   const [githubRepos, setGithubRepos] = useState<GitHubRepoItem[]>([]);
   const [usernameInput, setUsernameInput] = useState("");
+  const [isAppConnected, setIsAppConnected] = useState(false);
   const [loadingGithubRepos, setLoadingGithubRepos] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -105,6 +106,9 @@ export default function WorkspacePage() {
       if (res.ok) {
         const data = await res.json();
         setGithubRepos(data.githubRepos || []);
+        if (typeof data.isAppConnected === "boolean") {
+          setIsAppConnected(data.isAppConnected);
+        }
         if (data.resolvedLogin) {
           setUsernameInput(data.resolvedLogin);
         }
@@ -267,16 +271,23 @@ export default function WorkspacePage() {
         </div>
 
         <div className="flex items-center space-x-3">
-          <a
-            href="https://github.com/apps/atom-ai-agent/installations/new"
-            target="_blank"
-            rel="noreferrer"
-            className="glass-button-secondary px-4 py-2 text-xs rounded-xl font-semibold flex items-center space-x-2 shrink-0 justify-center"
-          >
-            <Github className="w-4 h-4" />
-            <span>Install GitHub App</span>
-            <ExternalLink className="w-3 h-3 ml-1" />
-          </a>
+          {isAppConnected ? (
+            <div className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold shadow-sm">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span>GitHub App Connected</span>
+            </div>
+          ) : (
+            <a
+              href="https://github.com/settings/apps"
+              target="_blank"
+              rel="noreferrer"
+              className="glass-button-secondary px-4 py-2 text-xs rounded-xl font-semibold flex items-center space-x-2 shrink-0 justify-center"
+            >
+              <Github className="w-4 h-4" />
+              <span>Install GitHub App</span>
+              <ExternalLink className="w-3 h-3 ml-1" />
+            </a>
+          )}
         </div>
       </div>
 

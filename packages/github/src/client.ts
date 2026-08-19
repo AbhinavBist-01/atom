@@ -1,6 +1,8 @@
 import { Octokit } from "@octokit/rest";
 import { createAppAuth } from "@octokit/auth-app";
 
+import "dotenv/config";
+
 export interface RepoRef {
   owner: string;
   repo: string;
@@ -36,7 +38,8 @@ export class AtomGitHubClient {
 
   constructor(config?: { token?: string; appAuth?: GitHubAppAuthConfig }) {
     let initialized = false;
-    this.token = config?.token || process.env.GITHUB_TOKEN || process.env.GITHUB_PAT;
+    this.token =
+      config?.token || process.env.GITHUB_TOKEN || process.env.GITHUB_PAT;
 
     if (config?.appAuth && config.appAuth.appId && config.appAuth.privateKey) {
       try {
@@ -76,13 +79,18 @@ export class AtomGitHubClient {
             auth: {
               appId: config.appAuth.appId,
               privateKey: cleanKey,
-              ...(config.appAuth.installationId ? { installationId: config.appAuth.installationId } : {}),
+              ...(config.appAuth.installationId
+                ? { installationId: config.appAuth.installationId }
+                : {}),
             },
           });
           initialized = true;
         }
       } catch (err) {
-        console.warn("[AtomGitHubClient] App authentication initialization failed, falling back:", err);
+        console.warn(
+          "[AtomGitHubClient] App authentication initialization failed, falling back:",
+          err,
+        );
       }
     }
 
@@ -98,10 +106,11 @@ export class AtomGitHubClient {
   private async getInstallationOctokit(ref: RepoRef): Promise<Octokit> {
     if (this.appAuthConfig) {
       try {
-        const { data: installation } = await this.octokit.apps.getRepoInstallation({
-          owner: ref.owner,
-          repo: ref.repo,
-        });
+        const { data: installation } =
+          await this.octokit.apps.getRepoInstallation({
+            owner: ref.owner,
+            repo: ref.repo,
+          });
 
         if (installation?.id) {
           return new Octokit({
@@ -135,14 +144,22 @@ export class AtomGitHubClient {
         body: data.body || "",
         state: data.state,
         author: data.user?.login || "unknown",
-        labels: data.labels.map((l) => (typeof l === "string" ? l : l.name || "")),
+        labels: data.labels.map((l) =>
+          typeof l === "string" ? l : l.name || "",
+        ),
         createdAt: data.created_at,
       };
     } catch (err: any) {
       // Direct REST fallback for public repos if octokit auth failed
-      const res = await fetch(`https://api.github.com/repos/${ref.owner}/${ref.repo}/issues/${issueNumber}`, {
-        headers: { "User-Agent": "ATOM-Agent", ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}) },
-      });
+      const res = await fetch(
+        `https://api.github.com/repos/${ref.owner}/${ref.repo}/issues/${issueNumber}`,
+        {
+          headers: {
+            "User-Agent": "ATOM-Agent",
+            ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+          },
+        },
+      );
       if (res.ok) {
         const data = await res.json();
         return {
@@ -151,7 +168,9 @@ export class AtomGitHubClient {
           body: data.body || "",
           state: data.state,
           author: data.user?.login || "unknown",
-          labels: (data.labels || []).map((l: any) => (typeof l === "string" ? l : l.name || "")),
+          labels: (data.labels || []).map((l: any) =>
+            typeof l === "string" ? l : l.name || "",
+          ),
           createdAt: data.created_at,
         };
       }
@@ -159,7 +178,10 @@ export class AtomGitHubClient {
     }
   }
 
-  async listIssues(ref: RepoRef, state: "open" | "closed" | "all" = "open"): Promise<IssueDetails[]> {
+  async listIssues(
+    ref: RepoRef,
+    state: "open" | "closed" | "all" = "open",
+  ): Promise<IssueDetails[]> {
     try {
       const octokit = await this.getInstallationOctokit(ref);
       const { data } = await octokit.issues.listForRepo({
@@ -178,7 +200,9 @@ export class AtomGitHubClient {
           body: d.body || "",
           state: d.state,
           author: d.user?.login || "unknown",
-          labels: d.labels.map((l) => (typeof l === "string" ? l : l.name || "")),
+          labels: d.labels.map((l) =>
+            typeof l === "string" ? l : l.name || "",
+          ),
           createdAt: d.created_at,
         }));
     } catch (err) {
@@ -186,8 +210,11 @@ export class AtomGitHubClient {
         const res = await fetch(
           `https://api.github.com/repos/${ref.owner}/${ref.repo}/issues?state=${state}&per_page=50&sort=updated`,
           {
-            headers: { "User-Agent": "ATOM-Agent", ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}) },
-          }
+            headers: {
+              "User-Agent": "ATOM-Agent",
+              ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+            },
+          },
         );
         if (res.ok) {
           const data = await res.json();
@@ -200,7 +227,9 @@ export class AtomGitHubClient {
                 body: d.body || "",
                 state: d.state,
                 author: d.user?.login || "unknown",
-                labels: (d.labels || []).map((l: any) => (typeof l === "string" ? l : l.name || "")),
+                labels: (d.labels || []).map((l: any) =>
+                  typeof l === "string" ? l : l.name || "",
+                ),
                 createdAt: d.created_at,
               }));
           }
@@ -208,22 +237,35 @@ export class AtomGitHubClient {
       } catch (fallbackErr) {
         // ignore
       }
-      console.warn(`[GitHub Client] Failed to list issues for ${ref.owner}/${ref.repo}:`, err);
+      console.warn(
+        `[GitHub Client] Failed to list issues for ${ref.owner}/${ref.repo}:`,
+        err,
+      );
       return [];
     }
   }
 
-  async createIssueComment(ref: RepoRef, issueNumber: number, body: string): Promise<void> {
+  async createIssueComment(
+    ref: RepoRef,
+    issueNumber: number,
+    body: string,
+  ): Promise<void> {
     const octokit = await this.getInstallationOctokit(ref);
     await octokit.issues.createComment({
       owner: ref.owner,
       repo: ref.repo,
       issue_number: issueNumber,
-      body
+      body,
     });
   }
 
-  async createPullRequest(ref: RepoRef, title: string, head: string, base: string, body: string): Promise<{ number: number; url: string }> {
+  async createPullRequest(
+    ref: RepoRef,
+    title: string,
+    head: string,
+    base: string,
+    body: string,
+  ): Promise<{ number: number; url: string }> {
     const octokit = await this.getInstallationOctokit(ref);
     const { data } = await octokit.pulls.create({
       owner: ref.owner,
@@ -231,28 +273,31 @@ export class AtomGitHubClient {
       title,
       head,
       base,
-      body
+      body,
     });
 
     return {
       number: data.number,
-      url: data.html_url
+      url: data.html_url,
     };
   }
 
-  async getRecentCommits(ref: RepoRef, limit: number = 10): Promise<CommitInfo[]> {
+  async getRecentCommits(
+    ref: RepoRef,
+    limit: number = 10,
+  ): Promise<CommitInfo[]> {
     const octokit = await this.getInstallationOctokit(ref);
     const { data } = await octokit.repos.listCommits({
       owner: ref.owner,
       repo: ref.repo,
-      per_page: limit
+      per_page: limit,
     });
 
     return data.map((c) => ({
       hash: c.sha,
       message: c.commit.message,
       author: c.commit.author?.name || c.author?.login || "unknown",
-      date: c.commit.author?.date || ""
+      date: c.commit.author?.date || "",
     }));
   }
 
@@ -262,7 +307,7 @@ export class AtomGitHubClient {
       owner: ref.owner,
       repo: ref.repo,
       tree_sha: branch,
-      recursive: "true"
+      recursive: "true",
     });
 
     return data.tree
@@ -270,7 +315,11 @@ export class AtomGitHubClient {
       .map((item) => item.path as string);
   }
 
-  async resolveUserLogin(input: { username?: string; email?: string; image?: string }): Promise<string | null> {
+  async resolveUserLogin(input: {
+    username?: string;
+    email?: string;
+    image?: string;
+  }): Promise<string | null> {
     const { username, email, image } = input;
 
     // 1. Try extracting numeric user ID from avatar URL (e.g. https://avatars.githubusercontent.com/u/178583190?v=4)
@@ -295,9 +344,12 @@ export class AtomGitHubClient {
     if (username) {
       const clean = username.trim().replace(/\s+/g, "");
       try {
-        const res = await fetch(`https://api.github.com/users/${encodeURIComponent(clean)}`, {
-          headers: { "User-Agent": "ATOM-Agent" },
-        });
+        const res = await fetch(
+          `https://api.github.com/users/${encodeURIComponent(clean)}`,
+          {
+            headers: { "User-Agent": "ATOM-Agent" },
+          },
+        );
         if (res.ok) {
           const data = await res.json();
           if (data.login) return data.login;
@@ -308,9 +360,12 @@ export class AtomGitHubClient {
 
       // 3. Search users by query
       try {
-        const res = await fetch(`https://api.github.com/search/users?q=${encodeURIComponent(username)}`, {
-          headers: { "User-Agent": "ATOM-Agent" },
-        });
+        const res = await fetch(
+          `https://api.github.com/search/users?q=${encodeURIComponent(username)}`,
+          {
+            headers: { "User-Agent": "ATOM-Agent" },
+          },
+        );
         if (res.ok) {
           const data = await res.json();
           if (data.items && data.items.length > 0 && data.items[0].login) {
@@ -326,9 +381,12 @@ export class AtomGitHubClient {
     if (email) {
       const prefix = email.split("@")[0];
       try {
-        const res = await fetch(`https://api.github.com/search/users?q=${encodeURIComponent(prefix)}`, {
-          headers: { "User-Agent": "ATOM-Agent" },
-        });
+        const res = await fetch(
+          `https://api.github.com/search/users?q=${encodeURIComponent(prefix)}`,
+          {
+            headers: { "User-Agent": "ATOM-Agent" },
+          },
+        );
         if (res.ok) {
           const data = await res.json();
           if (data.items && data.items.length > 0 && data.items[0].login) {
@@ -343,7 +401,19 @@ export class AtomGitHubClient {
     return null;
   }
 
-  async listUserRepos(username: string): Promise<Array<{ id: number; name: string; fullName: string; owner: string; private: boolean; description?: string | null; language?: string | null }>> {
+  async listUserRepos(
+    username: string,
+  ): Promise<
+    Array<{
+      id: number;
+      name: string;
+      fullName: string;
+      owner: string;
+      private: boolean;
+      description?: string | null;
+      language?: string | null;
+    }>
+  > {
     const cleanUsername = username.trim().replace(/\s+/g, "");
     if (!cleanUsername) return [];
 
@@ -366,12 +436,15 @@ export class AtomGitHubClient {
       }));
     } catch (err) {
       try {
-        const res = await fetch(`https://api.github.com/users/${encodeURIComponent(cleanUsername)}/repos?per_page=100&sort=updated`, {
-          headers: {
-            "User-Agent": "ATOM-Agent",
-            ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+        const res = await fetch(
+          `https://api.github.com/users/${encodeURIComponent(cleanUsername)}/repos?per_page=100&sort=updated`,
+          {
+            headers: {
+              "User-Agent": "ATOM-Agent",
+              ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+            },
           },
-        });
+        );
         if (res.ok) {
           const raw = await res.json();
           if (Array.isArray(raw)) {
@@ -387,16 +460,38 @@ export class AtomGitHubClient {
           }
         }
       } catch (fetchErr) {
-        console.warn(`[GitHub Client] Raw fetch failed for ${cleanUsername}:`, fetchErr);
+        console.warn(
+          `[GitHub Client] Raw fetch failed for ${cleanUsername}:`,
+          fetchErr,
+        );
       }
       return [];
     }
   }
 
-  async listAllAppRepos(): Promise<Array<{ id: number; name: string; fullName: string; owner: string; private: boolean; description?: string | null; language?: string | null }>> {
+  async listAllAppRepos(): Promise<
+    Array<{
+      id: number;
+      name: string;
+      fullName: string;
+      owner: string;
+      private: boolean;
+      description?: string | null;
+      language?: string | null;
+    }>
+  > {
     try {
-      const { data: installations } = await this.octokit.apps.listInstallations();
-      const allRepos: Array<{ id: number; name: string; fullName: string; owner: string; private: boolean; description?: string | null; language?: string | null }> = [];
+      const { data: installations } =
+        await this.octokit.apps.listInstallations();
+      const allRepos: Array<{
+        id: number;
+        name: string;
+        fullName: string;
+        owner: string;
+        private: boolean;
+        description?: string | null;
+        language?: string | null;
+      }> = [];
 
       for (const inst of installations) {
         const repos = await this.listInstallationRepos(inst.id);
@@ -404,17 +499,46 @@ export class AtomGitHubClient {
       }
       return allRepos;
     } catch (err) {
-      console.warn("[GitHub Client] Failed to list app installation repos:", err);
+      console.warn(
+        "[GitHub Client] Failed to list app installation repos:",
+        err,
+      );
       return [];
     }
   }
 
-  async listInstallationRepos(installationId: number): Promise<Array<{ id: number; name: string; fullName: string; owner: string; private: boolean; description?: string | null; language?: string | null }>> {
+  async listInstallationRepos(
+    installationId: number,
+  ): Promise<
+    Array<{
+      id: number;
+      name: string;
+      fullName: string;
+      owner: string;
+      private: boolean;
+      description?: string | null;
+      language?: string | null;
+    }>
+  > {
     try {
-      const { data } = await this.octokit.apps.listReposAccessibleToInstallation({
-        installation_id: installationId,
-        per_page: 100,
-      });
+      let instOctokit = this.octokit;
+      if (this.appAuthConfig) {
+        instOctokit = new Octokit({
+          authStrategy: createAppAuth,
+          auth: {
+            appId: this.appAuthConfig.appId,
+            privateKey: this.appAuthConfig.privateKey,
+            installationId,
+          },
+        });
+      }
+
+      const { data } = await instOctokit.apps.listReposAccessibleToInstallation(
+        {
+          installation_id: installationId,
+          per_page: 100,
+        },
+      );
 
       return data.repositories.map((r) => ({
         id: r.id,
@@ -426,7 +550,10 @@ export class AtomGitHubClient {
         language: r.language,
       }));
     } catch (err) {
-      console.warn(`[GitHub Client] Failed to fetch repos for installation ${installationId}:`, err);
+      console.warn(
+        `[GitHub Client] Failed to fetch repos for installation ${installationId}:`,
+        err,
+      );
       return [];
     }
   }

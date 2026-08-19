@@ -39,10 +39,15 @@ router.get("/github-repos", async (req: Request, res: Response): Promise<void> =
       language?: string | null;
     }>();
 
+    let isAppConnected = false;
+    let appReposCount = 0;
+
     // 1. If GitHub App is configured, fetch all repos where the GitHub App is installed
     if (appId && privateKey) {
       try {
         const appRepos = await githubClient.listAllAppRepos();
+        appReposCount = appRepos.length;
+        isAppConnected = appRepos.length > 0;
         for (const r of appRepos) {
           reposMap.set(r.fullName.toLowerCase(), r);
         }
@@ -68,7 +73,7 @@ router.get("/github-repos", async (req: Request, res: Response): Promise<void> =
     }
 
     const reposList = Array.from(reposMap.values());
-    res.json({ githubRepos: reposList, resolvedLogin });
+    res.json({ githubRepos: reposList, resolvedLogin, isAppConnected, appReposCount });
   } catch (error: any) {
     console.error("[Repos Router] Failed to fetch GitHub repos:", error);
     res.status(500).json({ error: "Failed to fetch GitHub repositories", message: error.message });
