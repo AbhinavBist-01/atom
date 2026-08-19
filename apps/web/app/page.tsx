@@ -27,16 +27,21 @@ export default function LandingPage() {
   }, [session, isPending, router]);
 
   const handleGitHubSignIn = async () => {
-    setAuthenticating(true);
-    const callbackURL =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/workspace`
-        : "http://localhost:3000/workspace";
+    try {
+      setAuthenticating(true);
+      const callbackURL =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/workspace`
+          : "http://localhost:3000/workspace";
 
-    await signIn.social({
-      provider: "github",
-      callbackURL,
-    });
+      await signIn.social({
+        provider: "github",
+        callbackURL,
+      });
+    } catch (error) {
+      console.error("Sign in failed:", error);
+      setAuthenticating(false);
+    }
   };
 
   // Show nothing while checking session or redirecting

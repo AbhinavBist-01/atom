@@ -196,15 +196,12 @@ router.post("/:id/publish", async (req: Request, res: Response): Promise<void> =
 
     const appId = process.env.GITHUB_APP_ID;
     const privateKey = process.env.GITHUB_APP_PRIVATE_KEY;
+    const token = process.env.GITHUB_TOKEN || process.env.GITHUB_PAT;
 
-    let client: AtomGitHubClient;
-    if (appId && privateKey) {
-      client = new AtomGitHubClient({
-        appAuth: { appId, privateKey },
-      });
-    } else {
-      client = new AtomGitHubClient();
-    }
+    const client = new AtomGitHubClient({
+      token,
+      ...(appId && privateKey ? { appAuth: { appId, privateKey } } : {}),
+    });
 
     if (action === "comment") {
       const commentBody = `## 🤖 ATOM Autonomous Issue Analysis
