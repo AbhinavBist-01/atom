@@ -1,8 +1,6 @@
 import { Octokit } from "@octokit/rest";
 import { createAppAuth } from "@octokit/auth-app";
 
-import "dotenv/config";
-
 export interface RepoRef {
   owner: string;
   repo: string;
@@ -280,6 +278,19 @@ export class AtomGitHubClient {
       number: data.number,
       url: data.html_url,
     };
+  }
+
+  async getDefaultBranch(ref: RepoRef): Promise<string> {
+    try {
+      const octokit = await this.getInstallationOctokit(ref);
+      const { data } = await octokit.repos.get({
+        owner: ref.owner,
+        repo: ref.repo,
+      });
+      return data.default_branch || "main";
+    } catch {
+      return "main";
+    }
   }
 
   async getRecentCommits(
