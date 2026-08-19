@@ -56,6 +56,8 @@ export default function IssueWorkbenchPage() {
   const [running, setRunning] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
   const [publishing, setPublishing] = useState(false);
+  const [creatingPr, setCreatingPr] = useState(false);
+  const [prResult, setPrResult] = useState<{ number?: number; url?: string; branch?: string } | null>(null);
   const [publishSuccess, setPublishSuccess] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [verifyResult, setVerifyResult] = useState<string | null>(null);
@@ -165,6 +167,38 @@ export default function IssueWorkbenchPage() {
       setError(err.message || "Publish comment failed.");
     } finally {
       setPublishing(false);
+    }
+  };
+
+  const handleCreatePR = async () => {
+    if (!runId) return;
+    setCreatingPr(true);
+    setError("");
+    setPublishSuccess("");
+    setPrResult(null);
+
+    try {
+      const res = await fetch(`${SERVER_URL}/api/runs/${runId}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "pr", owner, repo, issueNumber: parseInt(issueNumber, 10) }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || data.message || "Failed to create Pull Request");
+      }
+
+      setPrResult({
+        number: data.prNumber,
+        url: data.prUrl,
+        branch: data.branch,
+      });
+      setPublishSuccess(`Pull Request #${data.prNumber || ""} created successfully on GitHub!`);
+    } catch (err: any) {
+      setError(err.message || "Create Pull Request failed.");
+    } finally {
+      setCreatingPr(false);
     }
   };
 
@@ -351,11 +385,12 @@ export default function IssueWorkbenchPage() {
               </button>
 
               <button
-                onClick={() => alert("PR creation workflow initiated")}
-                className="glass-button-secondary px-4 py-2 text-xs rounded-xl font-semibold flex items-center space-x-2"
+                onClick={handleCreatePR}
+                disabled={creatingPr}
+                className="glass-button-secondary px-4 py-2 text-xs rounded-xl font-semibold flex items-center space-x-2 disabled:opacity-50"
               >
-                <GitPullRequest className="w-4 h-4 text-white" />
-                <span>Create Pull Request</span>
+                {creatingPr ? <Loader2 className="w-4 h-4 animate-spin" /> : <GitPullRequest className="w-4 h-4 text-white" />}
+                <span>{creatingPr ? "Creating PR..." : "Create Pull Request"}</span>
               </button>
             </div>
           </div>
@@ -366,7 +401,30 @@ export default function IssueWorkbenchPage() {
             </div>
           )}
 
-          {publishSuccess && (
+          {prResult && (
+            <div className="p-4 bg-white/5 border border-white/20 rounded-xl text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
+                <span className="text-zinc-200">
+                  Pull Request <strong className="text-white">#{prResult.number}</strong> opened successfully{prResult.branch ? ` on branch ` : ""}
+                  {prResult.branch && <code className="text-zinc-400 bg-white/10 px-1.5 py-0.5 rounded font-mono">{prResult.branch}</code>}
+                </span>
+              </div>
+              {prResult.url && (
+                <a
+                  href={prResult.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="glass-button-primary px-3 py-1.5 text-xs rounded-lg font-semibold flex items-center space-x-1.5"
+                >
+                  <span>View Pull Request #{prResult.number}</span>
+                  <ExternalLink className="w-3 h-3 ml-1" />
+                </a>
+              )}
+            </div>
+          )}
+
+          {publishSuccess && !prResult && (
             <div className="p-4 bg-white/10 border border-white/20 rounded-xl text-white text-xs flex items-center space-x-2">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>{publishSuccess}</span>

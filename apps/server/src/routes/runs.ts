@@ -224,7 +224,88 @@ ${rca.testPatch ? `### Generated Regression Unit Tests\n\`\`\`typescript\n${rca.
       await client.createIssueComment({ owner: targetOwner, repo: targetRepo }, targetIssueNumber, commentBody);
       res.json({ success: true, published: "comment" });
     } else {
-      res.json({ success: true, published: "pr", note: "PR publishing workflow initiated" });
+      if (!rca.patchDiff) {
+        res.status(400).json({ error: "No patch diff available to create PR. Please run analysis first." });
+        return;
+      }
+
+      let issueTitle = "";
+      try {
+        const issueData = await client.getIssue({ owner: targetOwner, repo: targetRepo }, targetIssueNumber);
+        if (issueData?.title) {
+          issueTitle = issueData.title;
+        }
+      } catch {}
+
+      const defaultBranch = await client.getDefaultBranch({ owner: targetOwner, repo: targetRepo });
+      const branchName = `atom/fix-issue-${targetIssueNumber}-${Date.now().toString().slice(-4)}`;
+      const workDir = path.join(process.cwd(), "scratch", "repos", `${targetOwner}_${targetRepo}`);
+
+      // Ensure local clone exists
+      const cloner = new GitCloner();
+      const repoUrl = `https://github.com/${targetOwner}/${targetRepo}.git`;
+      await cloner.cloneOrPull({
+        repoUrl,
+        targetDir: workDir,
+        depth: 5,
+      });
+
+      // Prepare authenticated remote URL if token is available
+      const remoteUrlWithAuth = token
+        ? `https://${token}@github.com/${targetOwner}/${targetRepo}.git`
+        : undefined;
+
+      const commitMessage = `fix: resolve issue #${targetIssueNumber}${issueTitle ? ` (${issueTitle})` : ""} via ATOM agent`;
+
+      // Branch, apply patch, and push to GitHub
+      await cloner.publishPatchBranch({
+        workDir,
+        branchName,
+        patchDiff: rca.patchDiff,
+        testPatch: rca.testPatch || undefined,
+        commitMessage,
+        remoteUrlWithAuth,
+      });
+
+      // Generate PR description
+      const prTitle = `fix: resolve issue #${targetIssueNumber}${issueTitle ? ` - ${issueTitle}` : ""}`;
+      const prBody = `## 🤖 ATOM Autonomous Issue Resolution
+
+Closes #${targetIssueNumber}
+
+### 🔍 Root Cause Analysis
+${rca.rootCause}
+
+**Confidence**: ${rca.confidence?.toUpperCase() || "HIGH"}
+
+### 📝 Proposed Fix Summary
+- Applied unified diff patch to address root cause.
+${rca.testPatch ? "- Added automated regression unit tests." : ""}
+
+\`\`\`diff
+${rca.patchDiff}
+\`\`\`
+
+${rca.testPatch ? `### 🧪 Test Patch\n\`\`\`typescript\n${rca.testPatch}\n\`\`\`` : ""}
+
+---
+*Generated autonomously by [ATOM](https://github.com) — Evidence-First GitHub Issue Resolution Agent.*`;
+
+      const prResult = await client.createPullRequest(
+        { owner: targetOwner, repo: targetRepo },
+        prTitle,
+        branchName,
+        defaultBranch,
+        prBody
+      );
+
+      res.json({
+        success: true,
+        published: "pr",
+        prNumber: prResult.number,
+        prUrl: prResult.url,
+        branch: branchName,
+      });
     }
   } catch (error: any) {
     console.error("[Publish Error]:", error);
