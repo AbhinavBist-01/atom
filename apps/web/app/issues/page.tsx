@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -41,7 +41,7 @@ interface IssueItem {
   createdAt: string;
 }
 
-export default function IssuesWorkbenchDirectoryPage() {
+function IssuesWorkbenchDirectoryContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, isPending } = useSession();
@@ -455,5 +455,19 @@ export default function IssuesWorkbenchDirectoryPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function IssuesWorkbenchDirectoryPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="w-6 h-6 text-zinc-500 animate-spin" />
+        </div>
+      }
+    >
+      <IssuesWorkbenchDirectoryContent />
+    </Suspense>
   );
 }
