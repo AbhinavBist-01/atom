@@ -1,5 +1,5 @@
-import WorkspacePage from "../workspace/page";
+import { redirect } from "next/navigation";
 
 export default function ReposPage() {
-  return <WorkspacePage />;
+  redirect("/workspace");
 }
