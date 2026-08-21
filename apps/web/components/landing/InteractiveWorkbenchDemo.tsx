@@ -248,10 +248,12 @@ export default function InteractiveWorkbenchDemo() {
                   ? selectedIssue.diff
                   : activeTab === "tests"
                   ? selectedIssue.testCode
+                  : activeTab === "sandbox"
+                  ? `[ATOM Sandbox Test Verification]\n100% Passed in ${selectedIssue.sandboxDuration}\nPR #${selectedIssue.number + 1} Opened Ready for Review`
                   : selectedIssue.rootCause
               )
             }
-            className="hidden sm:flex items-center space-x-1.5 text-xs text-[#8b949e] hover:text-white px-2.5 py-1 rounded bg-[#161b22] border border-[#30363d] transition"
+            className="hidden sm:flex items-center space-x-1.5 text-xs text-[#8b949e] hover:text-white px-2.5 py-1 rounded bg-[#161b22] border border-[#30363d] transition cursor-pointer"
             title="Copy current tab content"
           >
             {copied ? <Check className="w-3 h-3 text-[#3fb950]" /> : <Copy className="w-3 h-3" />}
@@ -283,7 +285,7 @@ export default function InteractiveWorkbenchDemo() {
                     <GitCommit className="w-3.5 h-3.5 text-[#3fb950]" />
                     <span>Last Modifying Blame Commit</span>
                   </div>
-                  <div className="text-zinc-300 text-xs bg-[#0d1117] px-3 py-2 rounded-lg border border-[#30363d] truncate">
+                  <div className="text-[#f0f6fc] text-xs bg-[#0d1117] px-3 py-2 rounded-lg border border-[#30363d] truncate">
                     {selectedIssue.commitBlame}
                   </div>
                   <p className="text-[11px] text-[#8b949e]">
@@ -296,7 +298,7 @@ export default function InteractiveWorkbenchDemo() {
                 <div className="text-[11px] uppercase tracking-wider text-[#3fb950] font-semibold">
                   Root Cause Explanation
                 </div>
-                <p className="text-sm font-sans text-zinc-200 leading-relaxed font-normal">
+                <p className="text-sm font-sans text-[#f0f6fc] leading-relaxed font-normal">
                   {selectedIssue.rootCause}
                 </p>
               </div>
@@ -306,47 +308,61 @@ export default function InteractiveWorkbenchDemo() {
           {/* TAB 2: UNIFIED DIFF */}
           {activeTab === "diff" && (
             <div className="space-y-3 animate-fadeIn">
-              <div className="flex items-center justify-between text-zinc-400 text-[11px]">
+              <div className="flex items-center justify-between text-[#8b949e] text-[11px]">
                 <span>Format: Unified Git Diff (`git apply` compliant)</span>
-                <span className="text-[#3fb950]">● Clean patch verified</span>
+                <span className="text-[#3fb950] font-mono">● Clean patch verified</span>
               </div>
-              <pre className="p-4 rounded-xl bg-[#050507] border border-[#30363d] text-zinc-300 overflow-x-auto leading-relaxed">
-                {selectedIssue.diff.split("\n").map((line, idx) => {
-                  if (line.startsWith("+")) {
+              <div className="rounded-xl bg-[#050507] border border-[#30363d] text-[#f0f6fc] overflow-hidden">
+                <div className="px-4 py-2 bg-[#0d1117] border-b border-[#30363d] text-[11px] text-[#8b949e] flex items-center justify-between font-mono">
+                  <span>{selectedIssue.fileCitation.split(":")[0]}</span>
+                  <span>Unified Patch</span>
+                </div>
+                <pre className="p-4 overflow-x-auto leading-relaxed text-[12px] font-mono">
+                  {selectedIssue.diff.split("\n").map((line, idx) => {
+                    if (line.startsWith("+")) {
+                      return (
+                        <div key={idx} className="diff-add px-2 py-0.5 rounded flex gap-3">
+                          <span className="text-[#3fb950]/50 select-none w-6 text-right shrink-0">{idx + 1}</span>
+                          <span>{line}</span>
+                        </div>
+                      );
+                    }
+                    if (line.startsWith("-")) {
+                      return (
+                        <div key={idx} className="diff-del px-2 py-0.5 rounded flex gap-3">
+                          <span className="text-[#f85149]/50 select-none w-6 text-right shrink-0">{idx + 1}</span>
+                          <span>{line}</span>
+                        </div>
+                      );
+                    }
+                    if (line.startsWith("@")) {
+                      return (
+                        <div key={idx} className="text-[#8b949e] py-1 flex gap-3 font-semibold">
+                          <span className="text-[#8b949e]/30 select-none w-6 text-right shrink-0">...</span>
+                          <span>{line}</span>
+                        </div>
+                      );
+                    }
                     return (
-                      <div key={idx} className="diff-add px-2 py-0.5 rounded">
-                        {line}
+                      <div key={idx} className="px-2 py-0.5 flex gap-3 text-[#f0f6fc]/80">
+                        <span className="text-[#8b949e]/30 select-none w-6 text-right shrink-0">{idx + 1}</span>
+                        <span>{line}</span>
                       </div>
                     );
-                  }
-                  if (line.startsWith("-")) {
-                    return (
-                      <div key={idx} className="diff-del px-2 py-0.5 rounded">
-                        {line}
-                      </div>
-                    );
-                  }
-                  if (line.startsWith("@")) {
-                    return (
-                      <div key={idx} className="text-zinc-500 py-1">
-                        {line}
-                      </div>
-                    );
-                  }
-                  return <div key={idx} className="px-2 py-0.5">{line}</div>;
-                })}
-              </pre>
+                  })}
+                </pre>
+              </div>
             </div>
           )}
 
           {/* TAB 3: TESTS */}
           {activeTab === "tests" && (
             <div className="space-y-3 animate-fadeIn">
-              <div className="flex items-center justify-between text-zinc-400 text-[11px]">
+              <div className="flex items-center justify-between text-[#8b949e] text-[11px]">
                 <span>Synthesized Regression Test Suite</span>
-                <span className="text-[#3fb950]">Framework: Vitest / Jest</span>
+                <span className="text-[#3fb950] font-mono">Framework: Vitest / Jest</span>
               </div>
-              <pre className="p-4 rounded-xl bg-[#050507] border border-[#30363d] text-zinc-300 overflow-x-auto leading-relaxed">
+              <pre className="p-4 rounded-xl bg-[#050507] border border-[#30363d] text-[#f0f6fc] overflow-x-auto leading-relaxed text-[12px] font-mono">
                 <code>{selectedIssue.testCode}</code>
               </pre>
             </div>
@@ -358,7 +374,7 @@ export default function InteractiveWorkbenchDemo() {
               {/* Sandbox Execution Status */}
               <div className="p-4 rounded-xl bg-[#161b22] border border-[#30363d] flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="p-2 rounded-lg bg-[#238636]/20 border border-[#238636]/40 text-[#3fb950]">
+                  <div className="p-2 rounded-lg bg-[#0e2e1a] border border-[#238636]/40 text-[#3fb950]">
                     <CheckCircle2 className="w-5 h-5" />
                   </div>
                   <div>
@@ -371,7 +387,7 @@ export default function InteractiveWorkbenchDemo() {
                   </div>
                 </div>
 
-                <span className="px-3 py-1 bg-[#238636] text-white rounded-md text-xs font-semibold">
+                <span className="px-3 py-1 bg-[#238636] text-white rounded-md text-xs font-semibold shadow-sm">
                   Verified
                 </span>
               </div>
@@ -384,14 +400,14 @@ export default function InteractiveWorkbenchDemo() {
                       A
                     </span>
                     <span className="text-xs font-bold text-white">atom-agent[bot]</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#21262d] text-[#8b949e]">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#21262d] text-[#8b949e] border border-[#30363d]">
                       GitHub App Bot
                     </span>
                   </div>
                   <span className="text-[11px] text-[#8b949e]">Just now</span>
                 </div>
 
-                <div className="space-y-2 text-xs font-sans text-zinc-300">
+                <div className="space-y-2 text-xs font-sans text-[#f0f6fc]">
                   <p className="font-semibold text-white">
                     🤖 ATOM Autonomous Fix for Issue #{selectedIssue.number}
                   </p>
@@ -402,7 +418,7 @@ export default function InteractiveWorkbenchDemo() {
                   <div className="pt-2 flex items-center space-x-3">
                     <span className="text-[#3fb950] flex items-center space-x-1 font-mono text-[11px]">
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>PR #403 Opened Ready for Review</span>
+                      <span>PR #{selectedIssue.number + 1} Opened Ready for Review</span>
                     </span>
                   </div>
                 </div>

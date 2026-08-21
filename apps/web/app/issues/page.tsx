@@ -189,13 +189,13 @@ function IssuesWorkbenchDirectoryContent() {
   return (
     <div className="space-y-8 py-2">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#30363d] pb-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white flex items-center space-x-3">
-            <AlertCircle className="w-7 h-7 text-white" />
+            <AlertCircle className="w-6 h-6 text-[#3fb950]" />
             <span>Issue Workbench</span>
           </h1>
-          <p className="text-sm text-zinc-400 mt-1">
+          <p className="text-xs text-[#8b949e] mt-1">
             Browse and inspect issues across your indexed codebases. Launch evidence-first Root Cause Analysis (RCA) and generate test-backed patches.
           </p>
         </div>
@@ -204,7 +204,7 @@ function IssuesWorkbenchDirectoryContent() {
           href="/workspace"
           className="glass-button-secondary px-4 py-2 text-xs rounded-xl font-semibold flex items-center space-x-2 shrink-0 self-start md:self-auto"
         >
-          <FolderGit2 className="w-4 h-4 text-zinc-300" />
+          <FolderGit2 className="w-4 h-4 text-[#8b949e]" />
           <span>Manage Repositories</span>
         </Link>
       </div>
@@ -212,20 +212,20 @@ function IssuesWorkbenchDirectoryContent() {
       {/* Main Layout: Repository Selector & Issues Explorer */}
       {loadingRepos ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
+          <Loader2 className="w-6 h-6 animate-spin text-[#3fb950]" />
         </div>
       ) : repos.length === 0 ? (
         /* Empty state: No indexed repositories */
-        <div className="glass-panel p-12 text-center rounded-2xl border border-white/10 space-y-4 max-w-2xl mx-auto">
-          <Layers className="w-12 h-12 text-zinc-600 mx-auto" />
+        <div className="glass-panel p-12 text-center rounded-2xl border border-[#30363d] space-y-4 max-w-2xl mx-auto">
+          <Layers className="w-12 h-12 text-[#8b949e] mx-auto" />
           <h2 className="text-lg font-bold text-white">No Indexed Repositories Found</h2>
-          <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
+          <p className="text-xs text-[#8b949e] max-w-md mx-auto leading-relaxed">
             The Issue Workbench requires an indexed repository to generate line-level code citations and unified diff patches.
           </p>
           <div className="pt-2">
             <Link
               href="/workspace"
-              className="glass-button-primary px-6 py-2.5 text-xs rounded-xl font-semibold inline-flex items-center space-x-2"
+              className="gh-btn-green px-6 py-2.5 text-xs rounded-xl font-semibold inline-flex items-center space-x-2"
             >
               <Plus className="w-4 h-4" />
               <span>Connect & Index a Repository First</span>
@@ -235,13 +235,13 @@ function IssuesWorkbenchDirectoryContent() {
       ) : (
         <div className="space-y-6">
           {/* 1. Indexed Repositories Selector Bar */}
-          <div className="glass-panel p-5 rounded-2xl border border-white/10 space-y-3">
+          <div className="glass-panel p-5 rounded-2xl border border-[#30363d] space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center space-x-2">
-                <FolderGit2 className="w-4 h-4 text-white" />
+              <label className="text-xs font-bold uppercase tracking-wider text-[#8b949e] flex items-center space-x-2">
+                <FolderGit2 className="w-4 h-4 text-[#3fb950]" />
                 <span>Select an Indexed Repository</span>
               </label>
-              <span className="text-xs text-zinc-500 font-mono">
+              <span className="text-xs text-[#8b949e] font-mono">
                 {repos.length} Codebase{repos.length > 1 ? "s" : ""} Available
               </span>
             </div>
@@ -254,18 +254,18 @@ function IssuesWorkbenchDirectoryContent() {
                   <button
                     key={r.id}
                     onClick={() => setSelectedRepoId(r.id)}
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center space-x-2.5 shrink-0 transition ${
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center space-x-2.5 shrink-0 transition cursor-pointer ${
                       isSelected
-                        ? "bg-white text-black shadow-lg"
-                        : "bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/10"
+                        ? "bg-[#238636] text-white shadow-md border border-[#2ea043]"
+                        : "bg-[#161b22] hover:bg-[#21262d] text-[#f0f6fc] border border-[#30363d]"
                     }`}
                   >
-                    <FolderGit2 className={`w-3.5 h-3.5 ${isSelected ? "text-black" : "text-zinc-400"}`} />
+                    <FolderGit2 className={`w-3.5 h-3.5 ${isSelected ? "text-white" : "text-[#8b949e]"}`} />
                     <span>
                       {r.owner}/{r.repo}
                     </span>
                     {r.status === "ready" && (
-                      <span className={`w-2 h-2 rounded-full ${isSelected ? "bg-emerald-600" : "bg-emerald-400"}`} />
+                      <span className={`w-2 h-2 rounded-full ${isSelected ? "bg-white" : "bg-[#3fb950]"}`} />
                     )}
                   </button>
                 );
@@ -277,16 +277,16 @@ function IssuesWorkbenchDirectoryContent() {
           {activeRepo && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Active Repo Summary Card */}
-              <div className="glass-card p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-3">
+              <div className="glass-card p-5 rounded-2xl border border-[#30363d] flex flex-col justify-between space-y-3">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
-                    <Github className="w-4 h-4 text-zinc-400" />
+                    <Github className="w-4 h-4 text-[#8b949e]" />
                     <h2 className="text-sm font-bold text-white truncate">
                       {activeRepo.owner} / {activeRepo.repo}
                     </h2>
                   </div>
-                  <p className="text-[11px] text-zinc-500 font-mono">
-                    Status: <span className="text-emerald-400 font-semibold">{activeRepo.status.toUpperCase()}</span> ·
+                  <p className="text-[11px] text-[#8b949e] font-mono">
+                    Status: <span className="text-[#3fb950] font-semibold">{activeRepo.status.toUpperCase()}</span> ·
                     Indexed: {activeRepo.indexedAt ? new Date(activeRepo.indexedAt).toLocaleDateString() : "Pending"}
                   </p>
                 </div>
@@ -295,7 +295,7 @@ function IssuesWorkbenchDirectoryContent() {
                   href={`https://github.com/${activeRepo.owner}/${activeRepo.repo}/issues`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs text-zinc-400 hover:text-white flex items-center space-x-1.5 pt-2 border-t border-white/5 transition"
+                  className="text-xs text-[#8b949e] hover:text-[#f0f6fc] flex items-center space-x-1.5 pt-2 border-t border-[#30363d]/60 transition"
                 >
                   <span>View on GitHub</span>
                   <ExternalLink className="w-3 h-3" />
@@ -303,9 +303,9 @@ function IssuesWorkbenchDirectoryContent() {
               </div>
 
               {/* Direct Issue Number Intake for Active Repo */}
-              <div className="glass-card p-5 rounded-2xl border border-white/10 space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center space-x-2">
-                  <Sparkles className="w-3.5 h-3.5 text-white" />
+              <div className="glass-card p-5 rounded-2xl border border-[#30363d] space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#8b949e] flex items-center space-x-2">
+                  <Sparkles className="w-3.5 h-3.5 text-[#3fb950]" />
                   <span>Inspect Issue # in this Codebase</span>
                 </h3>
                 <form onSubmit={handleManualIssueSubmit} className="flex gap-2">
@@ -314,12 +314,12 @@ function IssuesWorkbenchDirectoryContent() {
                     placeholder="e.g. 1"
                     value={manualIssueNum}
                     onChange={(e) => setManualIssueNum(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs bg-black/60 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:border-white/30 font-mono"
+                    className="w-full px-3 py-1.5 text-xs bg-[#0d1117] border border-[#30363d] rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-[#3fb950]/50 font-mono"
                   />
                   <button
                     type="submit"
                     disabled={!manualIssueNum}
-                    className="glass-button-primary px-4 py-1.5 text-xs rounded-xl font-semibold flex items-center space-x-1 shrink-0 disabled:opacity-50"
+                    className="gh-btn-green px-4 py-1.5 text-xs rounded-xl font-semibold flex items-center space-x-1 shrink-0 disabled:opacity-50 cursor-pointer"
                   >
                     <span>Launch</span>
                     <ArrowRight className="w-3 h-3" />
@@ -328,9 +328,9 @@ function IssuesWorkbenchDirectoryContent() {
               </div>
 
               {/* URL Intake */}
-              <div className="glass-card p-5 rounded-2xl border border-white/10 space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center space-x-2">
-                  <Search className="w-3.5 h-3.5 text-white" />
+              <div className="glass-card p-5 rounded-2xl border border-[#30363d] space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#8b949e] flex items-center space-x-2">
+                  <Search className="w-3.5 h-3.5 text-[#3fb950]" />
                   <span>Or Paste Full GitHub Issue URL</span>
                 </h3>
                 <form onSubmit={handleUrlSubmit} className="flex gap-2">
@@ -339,12 +339,12 @@ function IssuesWorkbenchDirectoryContent() {
                     placeholder="https://github.com/..."
                     value={issueUrl}
                     onChange={(e) => setIssueUrl(e.target.value)}
-                    className="w-full px-3 py-1.5 text-xs bg-black/60 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:border-white/30 font-mono"
+                    className="w-full px-3 py-1.5 text-xs bg-[#0d1117] border border-[#30363d] rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-[#3fb950]/50 font-mono"
                   />
                   <button
                     type="submit"
                     disabled={!issueUrl}
-                    className="glass-button-secondary px-4 py-1.5 text-xs rounded-xl font-semibold flex items-center space-x-1 shrink-0 disabled:opacity-50"
+                    className="glass-button-secondary px-4 py-1.5 text-xs rounded-xl font-semibold flex items-center space-x-1 shrink-0 disabled:opacity-50 cursor-pointer"
                   >
                     <span>Open</span>
                     <ArrowRight className="w-3 h-3" />
@@ -357,13 +357,13 @@ function IssuesWorkbenchDirectoryContent() {
           {/* 3. Issues List for Active Indexed Codebase */}
           {activeRepo && (
             <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#30363d] pb-3">
                 <div className="flex items-center space-x-2">
                   <AlertCircle className="w-5 h-5 text-white" />
                   <h3 className="text-base font-bold text-white">
                     Open Issues for {activeRepo.owner}/{activeRepo.repo}
                   </h3>
-                  <span className="text-xs text-zinc-400 font-mono bg-white/5 px-2 py-0.5 rounded border border-white/10">
+                  <span className="text-xs text-[#8b949e] font-mono bg-[#161b22] px-2 py-0.5 rounded border border-[#30363d]">
                     {issues.length}
                   </span>
                 </div>
@@ -376,20 +376,20 @@ function IssuesWorkbenchDirectoryContent() {
                     placeholder="Filter issues or labels..."
                     value={issueSearch}
                     onChange={(e) => setIssueSearch(e.target.value)}
-                    className="w-full pl-9 pr-3 py-1.5 text-xs bg-black/60 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:border-white/30"
+                    className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#0d1117] border border-[#30363d] rounded-xl text-white placeholder-zinc-500 focus:outline-none focus:border-[#3fb950]/50"
                   />
                 </div>
               </div>
 
               {loadingIssues ? (
                 <div className="flex items-center justify-center py-16">
-                  <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
+                  <Loader2 className="w-6 h-6 animate-spin text-[#3fb950]" />
                 </div>
               ) : filteredIssues.length === 0 ? (
-                <div className="glass-card p-12 text-center rounded-2xl border border-white/10 space-y-2">
-                  <AlertCircle className="w-8 h-8 text-zinc-600 mx-auto" />
-                  <p className="text-sm font-semibold text-zinc-300">No open issues found</p>
-                  <p className="text-xs text-zinc-500">
+                <div className="glass-card p-12 text-center rounded-2xl border border-[#30363d] space-y-2">
+                  <AlertCircle className="w-8 h-8 text-[#8b949e] mx-auto" />
+                  <p className="text-sm font-semibold text-[#f0f6fc]">No open issues found</p>
+                  <p className="text-xs text-[#8b949e]">
                     {issues.length === 0
                       ? "There are currently no open issues in this repository on GitHub. You can enter an issue number above to inspect past or closed issues."
                       : "No issues match your filter."}
@@ -401,19 +401,19 @@ function IssuesWorkbenchDirectoryContent() {
                     <Link
                       key={iss.number}
                       href={`/issues/${activeRepo.owner}/${activeRepo.repo}/${iss.number}`}
-                      className="glass-card p-4 rounded-xl border border-white/10 hover:border-white/25 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition group"
+                      className="glass-card p-4 rounded-xl border border-[#30363d] hover:border-[#3fb950]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition group"
                     >
                       <div className="space-y-1.5 flex-1 min-w-0">
                         <div className="flex items-center space-x-2.5">
-                          <span className="text-xs font-mono font-bold text-white bg-white/10 px-2 py-0.5 rounded border border-white/10">
+                          <span className="text-xs font-mono font-bold text-[#3fb950] bg-[#0e2e1a] px-2 py-0.5 rounded border border-[#238636]/40">
                             #{iss.number}
                           </span>
-                          <h4 className="text-sm font-semibold text-white group-hover:text-zinc-200 truncate">
+                          <h4 className="text-sm font-semibold text-white group-hover:text-[#3fb950] transition-colors truncate">
                             {iss.title}
                           </h4>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-[#8b949e]">
                           <span className="flex items-center space-x-1">
                             <User className="w-3 h-3" />
                             <span>{iss.author}</span>
@@ -426,11 +426,11 @@ function IssuesWorkbenchDirectoryContent() {
 
                           {iss.labels.length > 0 && (
                             <div className="flex items-center gap-1.5">
-                              <Tag className="w-3 h-3 text-zinc-500" />
+                              <Tag className="w-3 h-3 text-[#8b949e]" />
                               {iss.labels.slice(0, 3).map((l, i) => (
                                 <span
                                   key={i}
-                                  className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-300 border border-white/5"
+                                  className="text-[10px] px-1.5 py-0.5 rounded bg-[#161b22] text-[#f0f6fc] border border-[#30363d]"
                                 >
                                   {l}
                                 </span>
@@ -441,7 +441,7 @@ function IssuesWorkbenchDirectoryContent() {
                       </div>
 
                       <div className="flex items-center space-x-2 shrink-0 self-end sm:self-auto">
-                        <span className="text-xs font-semibold text-white group-hover:underline flex items-center space-x-1">
+                        <span className="text-xs font-semibold text-[#3fb950] group-hover:underline flex items-center space-x-1">
                           <span>Launch RCA Workbench</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </span>

@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
-  Cpu,
   FolderGit2,
   AlertCircle,
   Sparkles,
@@ -15,6 +14,7 @@ import { useSession, signOut } from "@/lib/auth-client";
 
 export default function NavBar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session, isPending } = useSession();
   const user = session?.user;
 
@@ -24,11 +24,11 @@ export default function NavBar() {
   };
 
   return (
-    <header className="border-b border-gh-border/70 bg-[#0d1117]/80 backdrop-blur-xl sticky top-0 z-50">
+    <header className="border-b border-[#30363d]/80 bg-[#0d1117]/90 backdrop-blur-xl sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href={user ? "/workspace" : "/"} className="flex items-center space-x-3.5 group">
-          <div className="w-11 h-11 rounded-xl overflow-hidden border border-gh-border group-hover:border-gh-greenText/60 transition-all duration-200 bg-gh-panel flex items-center justify-center p-1 shadow-md group-hover:shadow-[0_0_15px_rgba(63,185,80,0.25)]">
+          <div className="w-10 h-10 rounded-xl overflow-hidden border border-[#30363d] group-hover:border-[#3fb950]/60 transition-all duration-150 bg-[#161b22] flex items-center justify-center p-1 shadow-sm">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo.png"
@@ -38,7 +38,8 @@ export default function NavBar() {
           </div>
           <div className="flex items-center space-x-2.5">
             <span className="text-base font-bold tracking-tight text-white font-mono">ATOM</span>
-            <span className="px-2 py-0.5 text-[10px] font-mono font-medium bg-gh-greenDark/80 text-gh-greenText rounded-md border border-gh-green/40 shadow-sm">
+            <span className="px-2 py-0.5 text-[10px] font-mono font-medium bg-[#0e2e1a] text-[#3fb950] rounded-md border border-[#238636]/40 shadow-sm flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950] animate-pulse" />
               v0.1.0 · Online
             </span>
           </div>
@@ -49,23 +50,35 @@ export default function NavBar() {
           <nav className="flex items-center space-x-1">
             <Link
               href="/"
-              className="flex items-center space-x-2 px-3.5 py-1.5 text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/5 rounded-md transition"
+              className={`flex items-center space-x-2 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                pathname === "/"
+                  ? "text-white bg-[#21262d] border border-[#30363d]"
+                  : "text-[#8b949e] hover:text-[#f0f6fc] hover:bg-[#161b22]"
+              }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
+              <Sparkles className="w-3.5 h-3.5" />
               <span>Overview</span>
             </Link>
             <Link
               href="/workspace"
-              className="flex items-center space-x-2 px-3.5 py-1.5 text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/5 rounded-md transition"
+              className={`flex items-center space-x-2 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                pathname === "/workspace"
+                  ? "text-white bg-[#21262d] border border-[#30363d]"
+                  : "text-[#8b949e] hover:text-[#f0f6fc] hover:bg-[#161b22]"
+              }`}
             >
-              <FolderGit2 className="w-3.5 h-3.5 text-zinc-400" />
+              <FolderGit2 className="w-3.5 h-3.5" />
               <span>Workspace</span>
             </Link>
             <Link
               href="/issues"
-              className="flex items-center space-x-2 px-3.5 py-1.5 text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/5 rounded-md transition"
+              className={`flex items-center space-x-2 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                pathname.startsWith("/issues")
+                  ? "text-white bg-[#21262d] border border-[#30363d]"
+                  : "text-[#8b949e] hover:text-[#f0f6fc] hover:bg-[#161b22]"
+              }`}
             >
-              <AlertCircle className="w-3.5 h-3.5 text-zinc-400" />
+              <AlertCircle className="w-3.5 h-3.5" />
               <span>Issue Workbench</span>
             </Link>
           </nav>
@@ -74,22 +87,22 @@ export default function NavBar() {
         {/* Right side */}
         <div className="flex items-center space-x-3">
           {isPending ? (
-            <Loader2 className="w-4 h-4 text-zinc-500 animate-spin" />
+            <Loader2 className="w-4 h-4 text-[#8b949e] animate-spin" />
           ) : user ? (
             <>
               {/* User Avatar + Name */}
-              <div className="flex items-center space-x-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10">
+              <div className="flex items-center space-x-2 px-3 py-1.5 bg-[#161b22] rounded-lg border border-[#30363d]">
                 {user.image ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={user.image}
                     alt={user.name ?? "User"}
-                    className="w-5 h-5 rounded-full border border-white/20"
+                    className="w-5 h-5 rounded-full border border-[#30363d]"
                   />
                 ) : (
-                  <Github className="w-4 h-4 text-zinc-400" />
+                  <Github className="w-4 h-4 text-[#8b949e]" />
                 )}
-                <span className="text-xs text-zinc-300 font-medium max-w-[120px] truncate">
+                <span className="text-xs text-[#f0f6fc] font-medium max-w-[120px] truncate">
                   {user.name ?? user.email}
                 </span>
               </div>
@@ -97,10 +110,10 @@ export default function NavBar() {
               {/* Sign Out */}
               <button
                 onClick={handleSignOut}
-                className="glass-button-secondary px-3 py-1.5 text-xs rounded-lg flex items-center space-x-2"
+                className="glass-button-secondary px-3 py-1.5 text-xs rounded-lg flex items-center space-x-2 cursor-pointer"
                 title="Sign out"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-3.5 h-3.5 text-[#8b949e]" />
                 <span>Sign out</span>
               </button>
             </>
@@ -112,7 +125,7 @@ export default function NavBar() {
               rel="noreferrer"
               className="glass-button-secondary px-3.5 py-1.5 text-xs rounded-lg flex items-center space-x-2"
             >
-              <Github className="w-3.5 h-3.5" />
+              <Github className="w-3.5 h-3.5 text-[#8b949e]" />
               <span>GitHub App</span>
             </a>
           )}

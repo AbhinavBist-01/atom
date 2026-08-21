@@ -32,8 +32,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`dark ${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="antialiased min-h-screen bg-[#050507] text-zinc-100 flex flex-col font-sans selection:bg-[#238636] selection:text-white">
+    <html lang="en" className={`dark scroll-smooth ${inter.variable} ${jetbrainsMono.variable}`}>
+      <body className="antialiased min-h-screen bg-[#050507] text-[#f0f6fc] flex flex-col font-sans selection:bg-[#238636] selection:text-white">
         {/* Ambient Top Glow with subtle GitHub green tint */}
         <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 radial-spotlight pointer-events-none z-0" />
 
@@ -45,12 +45,12 @@ export default function RootLayout({
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-white/[0.06] bg-[#050507] py-6 text-center text-xs text-zinc-600">
+        <footer className="border-t border-[#30363d]/60 bg-[#050507] py-6 text-center text-xs text-[#8b949e]">
           <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="font-mono text-[11px]">
+            <p className="font-mono text-[11px] text-[#8b949e]">
               ATOM Autonomous GitHub Resolution Engine · Monochrome Glass Edition
             </p>
-            <div className="flex items-center space-x-4 text-zinc-500">
+            <div className="flex items-center space-x-4 text-[#8b949e]">
               <span>Next.js 16</span>
               <span>•</span>
               <span>Better Auth</span>

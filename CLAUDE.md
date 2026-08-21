@@ -190,6 +190,9 @@ pnpm docker:down     # Stop local Docker containers
 | **Next.js 16 CSR Bailing Warning** | `useSearchParams()` in `/issues` caused static generation de-optimization warnings. | Wrapped `IssuesWorkbenchDirectoryPage` inside `<Suspense>` with loading fallback. |
 | **Base64 / Quoted Key Failure** | `GITHUB_APP_PRIVATE_KEY` stored with quotes or base64 failed PEM header check. | Added base64 detection & decode, quote trimming, and CRLF normalization. |
 | **EINVAL Readlink on Windows/OneDrive** | Next.js stale cache in `.next/server/app/page.js` caused `readlink` syscall error on NTFS/OneDrive. | Cleared `.next` cache directory (`Remove-Item -Recurse -Force apps/web/.next`) and rebuilt cleanly. |
+| **Legacy White Glow & Dead Utility** | Legacy `border-white/10` / `bg-black` styling and dead `animate-fadeIn` class in diff viewer. | Replaced with strict Obsidian tokens (`#050507`), added `@keyframes fadeIn`, and added monospaced line gutters. |
+| **Workspace Repos Sync Desync** | Repositories were buried in manual inputs without a two-tier synced/connected separation. | Refactored `/workspace` into Tier 1 (real-time GitHub sync) + Tier 2 (active indexed DB codebases). |
+| **Next.js Unused ts-expect-error** | `@ts-expect-error` in `layout.tsx` failed strict TypeScript verification in Next.js production build. | Removed unused directive and verified `pnpm build:web` with 0 errors. |
 
 ---
 
@@ -226,7 +229,7 @@ pnpm docker:down     # Stop local Docker containers
    - Interactive scenario switcher for real-world bugs (e.g. Issue `#402` token refresh race condition, Issue `#188` WebSocket memory leak).
    - 4-stage interactive tab inspector:
      - **1. Root Cause Analysis**: Exact file:line citation (`src/auth/refresh.ts:42-81`), commit blame trace (`PR #392`), and confidence score (`99.4%`).
-     - **2. Unified Diff Patch**: Git-compliant patch preview with red deletion and green addition highlights.
+     - **2. Unified Diff Patch**: Git-compliant patch preview with line gutters and syntax highlights (`.diff-add` / `.diff-del`).
      - **3. Synthesized Unit Tests**: Generated regression test suite (Vitest/Jest).
      - **4. Sandbox & Bot PR**: Sandbox verification report (100% passed in `1.42s`) and `atom-agent[bot]` PR simulation.
 
@@ -244,5 +247,16 @@ pnpm docker:down     # Stop local Docker containers
 
 5. **`CallToAction.tsx`**:
    - Minimalist bottom card with subtle GitHub Green ambient radial spotlight and 1-click OAuth button.
+
+---
+
+## 8. Multi-Agent UI Audit & Verification Log
+
+| Audit Domain | Agent / Reviewer | Status | Verification Summary |
+|---|---|---|---|
+| **Forensic Integrity** | Forensic Auditor (`a7a09a57`) | **PASSED (Clean)** | Zero forbidden gradients/slop; verified authentic React hooks and interactive state across all views. |
+| **Design System** | Design System Reviewer (`462b44cd`) | **APPROVED** | Strict adherence to Obsidian `#050507`, `#30363d` hairline borders, and GitHub green `#238636`/`#3fb950`. |
+| **Type Safety & Build** | Build Reviewer (`418849ac`) | **APPROVED** | Verified Next.js 16 App Router compliance, Suspense boundaries, and clean production build. |
+| **Production Build** | Automated Next.js Verifier | **PASSED (Exit 0)** | All 8 static and dynamic routes compiled and optimized cleanly with 0 TypeScript/lint errors. |
 
 
