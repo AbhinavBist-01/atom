@@ -231,18 +231,18 @@ pnpm docker:down     # Stop local Docker containers
      - **4. Sandbox & Bot PR**: Sandbox verification report (100% passed in `1.42s`) and `atom-agent[bot]` PR simulation.
 
 3. **`CoreCapabilitiesGrid.tsx`**:
-   - 4 technical pillars:
-     - *AST Structural Indexer* (Tree-sitter multi-language chunking + pgvector).
-     - *Reciprocal Rank Fusion* (Dense embeddings + BM25 keyword search + HyDE).
-     - *Evidence-First RCA* (Deterministic file:line citations over hallucinations).
-     - *Sandboxed Verification & Bot Publisher* (`git apply` isolation + GitHub App bot auth).
+   - 4 rich interactive micro-apps:
+     - **AST Structural Inspector**: Interactive file switcher (`auth/refresh.ts`, `db/session.ts`, `net/socket.ts`) with live Tree-sitter AST nodes, function bounds, and git blame commit tags.
+     - **Hybrid RRF Tuner**: Interactive switcher between `Dense Vector (pgvector)`, `Sparse BM25 (Keywords)`, and `Fused RRF` with live top-K ranking scores.
+     - **Evidence vs Hallucination Switcher**: Interactive side-by-side comparison between standard LLM speculation vs. ATOM's deterministic file:line evidence citation (`src/auth/refresh.ts:42-81`, `commit 8f31a2c`).
+     - **Sandboxed Test Runner Console**: Interactive "Run Test" simulator with animated step execution (`git apply` ➔ `vitest` ➔ `3 passed in 1.42s`).
 
 4. **`UseCasesSection.tsx`**:
-   - 3 focused developer workflows:
-     - *Autonomous GitHub Issue Triage* (Webhooks -> clone -> RCA -> PR).
-     - *Interactive Issue Workbench* (In-depth developer inspection and approval).
-     - *Automated Regression Test Synthesis* (Guaranteed reproduction tests for CI).
+   - Interactive 4-step workflow lifecycle simulator:
+     - 3 Switchable Workflows: *Autonomous Webhook Triage (Webhook ➔ PR)*, *Developer Workbench (Interactive RCA)*, *CI Regression Defense (Unit Test Synthesis)*.
+     - 4 clickable interactive timeline steps (*Intake*, *AST & Blame*, *Sandbox Verification*, *PR Bot Publication*) with live step execution terminal traces.
 
 5. **`CallToAction.tsx`**:
    - Minimalist bottom card with subtle GitHub Green ambient radial spotlight and 1-click OAuth button.
+
 
