@@ -28,11 +28,13 @@ export default function HeroSection() {
   return (
     <section className="pt-6 pb-10 md:pt-12 md:pb-14 max-w-4xl mx-auto text-center space-y-6">
       {/* Live Engine Status Pill */}
-      <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#161b22] border border-[#30363d] text-xs font-mono text-zinc-300">
-        <span className="w-2 h-2 rounded-full bg-[#3fb950] animate-pulse" />
-        <span className="text-zinc-400">ATOM</span>
+      <div className="inline-flex items-center space-x-2.5 px-3.5 py-1.5 rounded-full bg-[#161b22] border border-[#30363d] text-xs font-mono text-zinc-300 shadow-sm">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="ATOM" className="w-4 h-4 rounded object-contain" />
+        <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950] animate-pulse" />
+        <span className="text-zinc-200 font-semibold">ATOM</span>
         <span className="text-zinc-600">/</span>
-        <span className="text-zinc-200">Autonomous GitHub Issue Resolution</span>
+        <span className="text-zinc-400">Autonomous GitHub Resolution</span>
       </div>
 
       {/* Main Headline */}

@@ -27,18 +27,18 @@ export default function NavBar() {
     <header className="border-b border-gh-border/70 bg-[#0d1117]/80 backdrop-blur-xl sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href={user ? "/workspace" : "/"} className="flex items-center space-x-3 group">
-          <div className="w-8 h-8 rounded-lg overflow-hidden border border-gh-border group-hover:border-gh-greenText/50 transition bg-gh-panel flex items-center justify-center p-0.5 shadow-sm">
+        <Link href={user ? "/workspace" : "/"} className="flex items-center space-x-3.5 group">
+          <div className="w-11 h-11 rounded-xl overflow-hidden border border-gh-border group-hover:border-gh-greenText/60 transition-all duration-200 bg-gh-panel flex items-center justify-center p-1 shadow-md group-hover:shadow-[0_0_15px_rgba(63,185,80,0.25)]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo.png"
               alt="ATOM Logo"
-              className="w-full h-full object-cover rounded-md"
+              className="w-full h-full object-contain rounded-lg"
             />
           </div>
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-semibold tracking-tight text-white font-mono">ATOM</span>
-            <span className="px-2 py-0.5 text-[10px] font-mono font-medium bg-gh-greenDark/60 text-gh-greenText rounded border border-gh-green/30">
+          <div className="flex items-center space-x-2.5">
+            <span className="text-base font-bold tracking-tight text-white font-mono">ATOM</span>
+            <span className="px-2 py-0.5 text-[10px] font-mono font-medium bg-gh-greenDark/80 text-gh-greenText rounded-md border border-gh-green/40 shadow-sm">
               v0.1.0 · Online
             </span>
           </div>
