@@ -160,7 +160,16 @@ pnpm docker:down     # Stop local Docker containers
 ### D. Sandboxed Test Runner & Bot Comment Publishing
 - **Dynamic Installation Auth (`getInstallationOctokit`)**: Resolves the repository installation ID on the fly via `octokit.apps.getRepoInstallation({ owner, repo })`, allowing bot PRs and issue comments without manual installation IDs.
 - **Auto-Cloning in Sandbox**: If `scratch/repos/${owner}_${repo}` is missing during sandbox test verification, it automatically triggers a shallow clone before applying diff patches.
-- **RSA Private Key Unescaping**: Automatically unescapes literal `\n` characters in `GITHUB_APP_PRIVATE_KEY` strings loaded from `.env` files.
+- **Multi-Stage RSA Key Sanitization**: Handles base64 encoded private keys, wrapped quotation marks (`"..."` / `'...'`), and unescapes literal `\n` characters from `.env` files with graceful fallback.
+
+### E. GitHub App Multi-Installation & Repository Aggregation
+- **Cross-Installation Discovery (`listAllAppRepos`)**: Discovers repositories across all installations where the ATOM GitHub App is configured by iterating through `apps.listInstallations()` and `apps.listReposAccessibleToInstallation()`.
+- **Connection Health & Metadata**: `/api/repos/github-repos` returns `isAppConnected` and `appReposCount` flags to render visual connection badges in the Workspace UI.
+
+### F. Next.js Architecture, API Rewrites & ESM Interop
+- **Transparent API Rewrites (`next.config.mjs`)**: Next.js proxies `/api/auth/:path*` and `/api/:path*` directly to `NEXT_PUBLIC_SERVER_URL` (port 4000), eliminating cross-origin mismatches and cookie dropping.
+- **Pure ESM Monorepo Standardization**: All `@atom/*` packages define `"type": "module"` with explicit `.js` import extensions for modern Node.js and Next.js 16 bundler compliance.
+- **Client Suspense Boundaries**: Pages consuming `useSearchParams` (e.g. `/issues`) are wrapped in React `<Suspense>` boundaries to satisfy Next.js static generation constraints.
 
 ---
 
@@ -175,3 +184,65 @@ pnpm docker:down     # Stop local Docker containers
 | **Disconnected Issue Workbench** | `/issues` only had manual inputs without showing indexed repositories. | Rewrote `/issues` to load DB repositories, browse live GitHub issues, and support `?owner=&repo=`. |
 | **Verify 400 / Missing Directory** | `/api/runs/:id/verify` failed if `scratch/repos` was not on disk. | Added auto-clone fallback with `GitCloner` and automatic relation lookup from DB. |
 | **Publish Comment 401 / 500** | `AtomGitHubClient` had unauthenticated Octokit instance for comment creation. | Added dynamic repository installation token resolution (`getInstallationOctokit`). |
+| **Org / App Repos Missing** | User repo listing only fetched personal repos, missing repos where GitHub App was installed. | Implemented `listAllAppRepos()` and `listInstallationRepos()` in `AtomGitHubClient` and merged with user repos. |
+| **Next.js Port / CORS Friction** | Direct client requests to port 4000 required complex CORS headers on edge routes. | Added Next.js `rewrites()` in `next.config.mjs` to proxy `/api/*` and `/api/auth/*` to the server. |
+| **ESM Module Resolution Failure** | Monorepo internal packages lacked `"type": "module"`, breaking ESM imports. | Added `"type": "module"` to `package.json` files across `@atom/core`, `@atom/github`, `@atom/parser`, `@atom/rag`, `@atom/agent`. |
+| **Next.js 16 CSR Bailing Warning** | `useSearchParams()` in `/issues` caused static generation de-optimization warnings. | Wrapped `IssuesWorkbenchDirectoryPage` inside `<Suspense>` with loading fallback. |
+| **Base64 / Quoted Key Failure** | `GITHUB_APP_PRIVATE_KEY` stored with quotes or base64 failed PEM header check. | Added base64 detection & decode, quote trimming, and CRLF normalization. |
+| **EINVAL Readlink on Windows/OneDrive** | Next.js stale cache in `.next/server/app/page.js` caused `readlink` syscall error on NTFS/OneDrive. | Cleared `.next` cache directory (`Remove-Item -Recurse -Force apps/web/.next`) and rebuilt cleanly. |
+
+---
+
+## 7. Frontend Design System & Landing Page Specifications
+
+### A. Core Design Philosophy
+- **Minimalist & Professional**: Zero AI-slop (no gratuitous purple/magenta gradients, no generic floating blobs). Pure focus on high-signal developer information.
+- **Color Palette (Monochrome + GitHub Green Accent Only)**:
+  - `Background`: `#050507` (Deep obsidian black)
+  - `Panels & Cards`: `#0d1117`, `#161b22`, `#21262d` (GitHub dark mode neutrals)
+  - `Borders`: `#30363d` (Precise, hairline structural borders)
+  - `Text`: `#ffffff` (Primary heading), `#f0f6fc` (Secondary), `#8b949e` (Muted labels & captions)
+  - `GitHub Green Accent`:
+    - CTA Background: `#238636` (`gh-btn-green` class)
+    - CTA Hover: `#2ea043`
+    - Badges & Text: `#3fb950` (`text-[#3fb950]`)
+    - Dark Badge Fill: `#0e2e1a` (`bg-[#0e2e1a]`)
+    - Diff Additions: `rgba(46, 160, 67, 0.15)` with `#3fb950` border
+    - Ambient Glow: `radial-gradient` spotlight with 8% `#2ea043` alpha
+
+### B. Typography Hierarchy
+- **Body & Display**: **Inter** (`next/font/google`, `var(--font-inter)`), font-weight scale `400 / 500 / 600 / 800`.
+- **Code & Metadata**: **JetBrains Mono** (`var(--font-mono)`), used for file citations (`auth.ts:42-81`), commit hashes (`8f31a2c`), and diff views.
+
+### C. Landing Page Modular Component Architecture (`apps/web/components/landing/`)
+1. **`HeroSection.tsx`**:
+   - Live heartbeat status badge (`● ATOM v0.1.0 · Autonomous GitHub Issue Resolution Engine`).
+   - High-contrast editorial headline with subtle white-to-green gradient terminal word.
+   - 1-click **GitHub Green OAuth CTA** (`gh-btn-green`) with instantaneous loading state.
+   - Architecture trust indicators: *Zero-Code Leaks (Scoped OAuth)*, *Automated Unit Tests*, *AST Chunking + RAG*.
+
+2. **`InteractiveWorkbenchDemo.tsx`**:
+   - Live interactive simulation of the ATOM Issue Workbench.
+   - Interactive scenario switcher for real-world bugs (e.g. Issue `#402` token refresh race condition, Issue `#188` WebSocket memory leak).
+   - 4-stage interactive tab inspector:
+     - **1. Root Cause Analysis**: Exact file:line citation (`src/auth/refresh.ts:42-81`), commit blame trace (`PR #392`), and confidence score (`99.4%`).
+     - **2. Unified Diff Patch**: Git-compliant patch preview with red deletion and green addition highlights.
+     - **3. Synthesized Unit Tests**: Generated regression test suite (Vitest/Jest).
+     - **4. Sandbox & Bot PR**: Sandbox verification report (100% passed in `1.42s`) and `atom-agent[bot]` PR simulation.
+
+3. **`CoreCapabilitiesGrid.tsx`**:
+   - 4 technical pillars:
+     - *AST Structural Indexer* (Tree-sitter multi-language chunking + pgvector).
+     - *Reciprocal Rank Fusion* (Dense embeddings + BM25 keyword search + HyDE).
+     - *Evidence-First RCA* (Deterministic file:line citations over hallucinations).
+     - *Sandboxed Verification & Bot Publisher* (`git apply` isolation + GitHub App bot auth).
+
+4. **`UseCasesSection.tsx`**:
+   - 3 focused developer workflows:
+     - *Autonomous GitHub Issue Triage* (Webhooks -> clone -> RCA -> PR).
+     - *Interactive Issue Workbench* (In-depth developer inspection and approval).
+     - *Automated Regression Test Synthesis* (Guaranteed reproduction tests for CI).
+
+5. **`CallToAction.tsx`**:
+   - Minimalist bottom card with subtle GitHub Green ambient radial spotlight and 1-click OAuth button.
+

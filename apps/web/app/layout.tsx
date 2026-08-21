@@ -1,6 +1,19 @@
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import NavBar from "@/components/NavBar";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
   title: "ATOM — Autonomous GitHub Issue Resolution Agent",
@@ -14,9 +27,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className="antialiased min-h-screen bg-[#050507] text-zinc-100 flex flex-col font-sans selection:bg-white selection:text-black">
-        {/* Ambient Top Glow */}
+    <html lang="en" className={`dark ${inter.variable} ${jetbrainsMono.variable}`}>
+      <body className="antialiased min-h-screen bg-[#050507] text-zinc-100 flex flex-col font-sans selection:bg-[#238636] selection:text-white">
+        {/* Ambient Top Glow with subtle GitHub green tint */}
         <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 radial-spotlight pointer-events-none z-0" />
 
         <NavBar />

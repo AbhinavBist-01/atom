@@ -24,17 +24,17 @@ export default function NavBar() {
   };
 
   return (
-    <header className="border-b border-white/[0.08] bg-[#09090c]/70 backdrop-blur-xl sticky top-0 z-50">
+    <header className="border-b border-gh-border/70 bg-[#0d1117]/80 backdrop-blur-xl sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href={user ? "/workspace" : "/"} className="flex items-center space-x-3 group">
-          <div className="p-2 bg-white/5 text-white rounded-lg border border-white/10 group-hover:border-white/30 transition">
-            <Cpu className="w-5 h-5 text-white" />
+          <div className="p-2 bg-gh-panel text-white rounded-lg border border-gh-border group-hover:border-gh-greenText/50 transition">
+            <Cpu className="w-4 h-4 text-gh-greenText" />
           </div>
           <div className="flex items-center space-x-2">
-            <span className="text-base font-bold tracking-tight text-white">ATOM</span>
-            <span className="px-2 py-0.5 text-[10px] font-mono uppercase font-semibold bg-white/10 text-zinc-300 rounded border border-white/10">
-              v0.1.0
+            <span className="text-sm font-semibold tracking-tight text-white font-mono">ATOM</span>
+            <span className="px-2 py-0.5 text-[10px] font-mono font-medium bg-gh-greenDark/60 text-gh-greenText rounded border border-gh-green/30">
+              v0.1.0 · Online
             </span>
           </div>
         </Link>
