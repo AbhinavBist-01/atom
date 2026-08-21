@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   title: "ATOM — Autonomous GitHub Issue Resolution Agent",
   description:
     "Evidence-first autonomous bug fixing agent with RCA, line-level citations, and patch generation",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

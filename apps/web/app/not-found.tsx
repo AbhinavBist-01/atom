@@ -4,8 +4,9 @@ import { ArrowLeft, Cpu } from "lucide-react";
 export default function NotFound() {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-6 max-w-md mx-auto">
-      <div className="p-3 bg-[#161b22] border border-[#30363d] rounded-2xl text-[#3fb950]">
-        <Cpu className="w-8 h-8" />
+      <div className="w-16 h-16 bg-[#161b22] border border-[#30363d] rounded-2xl overflow-hidden p-1 shadow-md">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="ATOM Logo" className="w-full h-full object-cover rounded-xl" />
       </div>
 
       <div className="space-y-2">

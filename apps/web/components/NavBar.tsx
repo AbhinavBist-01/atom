@@ -28,8 +28,13 @@ export default function NavBar() {
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href={user ? "/workspace" : "/"} className="flex items-center space-x-3 group">
-          <div className="p-2 bg-gh-panel text-white rounded-lg border border-gh-border group-hover:border-gh-greenText/50 transition">
-            <Cpu className="w-4 h-4 text-gh-greenText" />
+          <div className="w-8 h-8 rounded-lg overflow-hidden border border-gh-border group-hover:border-gh-greenText/50 transition bg-gh-panel flex items-center justify-center p-0.5 shadow-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="ATOM Logo"
+              className="w-full h-full object-cover rounded-md"
+            />
           </div>
           <div className="flex items-center space-x-2">
             <span className="text-sm font-semibold tracking-tight text-white font-mono">ATOM</span>

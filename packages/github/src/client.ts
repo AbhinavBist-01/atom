@@ -428,27 +428,49 @@ export class AtomGitHubClient {
     const cleanUsername = username.trim().replace(/\s+/g, "");
     if (!cleanUsername) return [];
 
-    try {
-      const octokit = this.getFallbackOctokit();
-      const { data } = await octokit.repos.listForUser({
-        username: cleanUsername,
-        sort: "updated",
-        per_page: 100,
-      });
+    const reposMap = new Map<string, {
+      id: number;
+      name: string;
+      fullName: string;
+      owner: string;
+      private: boolean;
+      description?: string | null;
+      language?: string | null;
+    }>();
 
-      return data.map((r) => ({
-        id: r.id,
-        name: r.name,
-        fullName: r.full_name,
-        owner: r.owner.login,
-        private: r.private,
-        description: r.description,
-        language: r.language,
-      }));
-    } catch (err) {
+    // 1. If authenticated token is available, fetch all user repos (private, org, collaborated)
+    if (this.token) {
       try {
+        const octokit = this.getFallbackOctokit();
+        const authedRepos = await octokit.paginate(octokit.repos.listForAuthenticatedUser, {
+          visibility: "all",
+          affiliation: "owner,collaborator,organization_member",
+          per_page: 100,
+        });
+
+        for (const r of authedRepos) {
+          reposMap.set(r.full_name.toLowerCase(), {
+            id: r.id,
+            name: r.name,
+            fullName: r.full_name,
+            owner: r.owner.login,
+            private: r.private,
+            description: r.description,
+            language: r.language,
+          });
+        }
+      } catch (authErr) {
+        console.warn("[GitHub Client] Authenticated repo list warning:", authErr);
+      }
+    }
+
+    // 2. Fetch public repos for user (with pagination)
+    try {
+      let page = 1;
+      let hasMore = true;
+      while (hasMore && page <= 5) {
         const res = await fetch(
-          `https://api.github.com/users/${encodeURIComponent(cleanUsername)}/repos?per_page=100&sort=updated`,
+          `https://api.github.com/users/${encodeURIComponent(cleanUsername)}/repos?per_page=100&page=${page}&sort=updated`,
           {
             headers: {
               "User-Agent": "ATOM-Agent",
@@ -458,26 +480,84 @@ export class AtomGitHubClient {
         );
         if (res.ok) {
           const raw = await res.json();
-          if (Array.isArray(raw)) {
-            return raw.map((r: any) => ({
-              id: r.id,
-              name: r.name,
-              fullName: r.full_name,
-              owner: r.owner?.login || cleanUsername,
-              private: !!r.private,
-              description: r.description,
-              language: r.language,
-            }));
+          if (Array.isArray(raw) && raw.length > 0) {
+            for (const r of raw) {
+              if (!reposMap.has((r.full_name || "").toLowerCase())) {
+                reposMap.set((r.full_name || "").toLowerCase(), {
+                  id: r.id,
+                  name: r.name,
+                  fullName: r.full_name,
+                  owner: r.owner?.login || cleanUsername,
+                  private: !!r.private,
+                  description: r.description,
+                  language: r.language,
+                });
+              }
+            }
+            if (raw.length < 100) hasMore = false;
+            else page++;
+          } else {
+            hasMore = false;
+          }
+        } else {
+          hasMore = false;
+        }
+      }
+    } catch (fetchErr) {
+      console.warn(`[GitHub Client] User repos fetch error for ${cleanUsername}:`, fetchErr);
+    }
+
+    // 3. Fetch user's public organizations and their repos
+    try {
+      const orgsRes = await fetch(
+        `https://api.github.com/users/${encodeURIComponent(cleanUsername)}/orgs?per_page=50`,
+        {
+          headers: {
+            "User-Agent": "ATOM-Agent",
+            ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+          },
+        },
+      );
+      if (orgsRes.ok) {
+        const orgs = await orgsRes.json();
+        if (Array.isArray(orgs)) {
+          for (const org of orgs.slice(0, 5)) {
+            if (!org.login) continue;
+            const orgReposRes = await fetch(
+              `https://api.github.com/orgs/${encodeURIComponent(org.login)}/repos?per_page=100`,
+              {
+                headers: {
+                  "User-Agent": "ATOM-Agent",
+                  ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
+                },
+              },
+            );
+            if (orgReposRes.ok) {
+              const orgRepos = await orgReposRes.json();
+              if (Array.isArray(orgRepos)) {
+                for (const r of orgRepos) {
+                  if (!reposMap.has((r.full_name || "").toLowerCase())) {
+                    reposMap.set((r.full_name || "").toLowerCase(), {
+                      id: r.id,
+                      name: r.name,
+                      fullName: r.full_name,
+                      owner: r.owner?.login || org.login,
+                      private: !!r.private,
+                      description: r.description,
+                      language: r.language,
+                    });
+                  }
+                }
+              }
+            }
           }
         }
-      } catch (fetchErr) {
-        console.warn(
-          `[GitHub Client] Raw fetch failed for ${cleanUsername}:`,
-          fetchErr,
-        );
       }
-      return [];
+    } catch (orgErr) {
+      // ignore
     }
+
+    return Array.from(reposMap.values());
   }
 
   async listAllAppRepos(): Promise<
@@ -492,8 +572,10 @@ export class AtomGitHubClient {
     }>
   > {
     try {
-      const { data: installations } =
-        await this.octokit.apps.listInstallations();
+      const installations = await this.octokit.paginate(
+        this.octokit.apps.listInstallations,
+        { per_page: 100 },
+      );
       const allRepos: Array<{
         id: number;
         name: string;
@@ -544,14 +626,16 @@ export class AtomGitHubClient {
         });
       }
 
-      const { data } = await instOctokit.apps.listReposAccessibleToInstallation(
+      const repos = await instOctokit.paginate(
+        instOctokit.apps.listReposAccessibleToInstallation,
         {
           installation_id: installationId,
           per_page: 100,
         },
+        (response) => response.data,
       );
 
-      return data.repositories.map((r) => ({
+      return repos.map((r: any) => ({
         id: r.id,
         name: r.name,
         fullName: r.full_name,
