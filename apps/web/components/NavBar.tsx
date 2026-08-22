@@ -26,23 +26,15 @@ export default function NavBar() {
   return (
     <header className="border-b border-[#30363d]/80 bg-[#0d1117]/90 backdrop-blur-xl sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <Link href={user ? "/workspace" : "/"} className="flex items-center space-x-3.5 group">
-          <div className="w-10 h-10 rounded-xl overflow-hidden border border-[#30363d] group-hover:border-[#3fb950]/60 transition-all duration-150 bg-[#161b22] flex items-center justify-center p-1 shadow-sm">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo.png"
-              alt="ATOM Logo"
-              className="w-full h-full object-contain rounded-lg"
-            />
-          </div>
-          <div className="flex items-center space-x-2.5">
-            <span className="text-base font-bold tracking-tight text-white font-mono">ATOM</span>
-            <span className="px-2 py-0.5 text-[10px] font-mono font-medium bg-[#0e2e1a] text-[#3fb950] rounded-md border border-[#238636]/40 shadow-sm flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950] animate-pulse" />
-              v0.1.0 · Online
-            </span>
-          </div>
+        {/* Brandmark */}
+        <Link href={user ? "/workspace" : "/"} className="flex items-center space-x-2.5 group">
+          <span className="text-base font-bold tracking-tight text-white font-mono group-hover:text-[#3fb950] transition-colors">
+            ATOM
+          </span>
+          <span className="px-2 py-0.5 text-[10px] font-mono font-medium bg-[#0e2e1a] text-[#3fb950] rounded-md border border-[#238636]/40 shadow-sm flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#3fb950] animate-pulse" />
+            v0.1.0 · Online
+          </span>
         </Link>
 
         {/* Nav Links — only shown when authenticated */}
