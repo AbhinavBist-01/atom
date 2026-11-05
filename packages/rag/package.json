@@ -16,6 +16,7 @@
     "wink-bm25-text-search": "^3.1.0"
   },
   "devDependencies": {
+    "@types/node": "^22.10.10",
     "typescript": "^5.7.3"
   }
 }

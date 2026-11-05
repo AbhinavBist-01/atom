@@ -2,6 +2,10 @@ import "dotenv/config";
 import OpenAI from "openai";
 import { RcaResult, RcaResultSchema } from "@atom/core";
 
+export * from "./tools.js";
+export * from "./sandbox.js";
+export * from "./investigator.js";
+
 export interface CodeContextChunk {
   filePath: string;
   startLine: number;
@@ -86,7 +90,12 @@ ${contextFormatted || "No code chunks retrieved."}`;
   });
 
   const rawJson = response.choices[0]?.message?.content || "{}";
-  const parsed = JSON.parse(rawJson);
+  let parsed: any;
+  try {
+    parsed = JSON.parse(rawJson);
+  } catch {
+    parsed = {};
+  }
 
   const validated = RcaResultSchema.safeParse(parsed);
   if (validated.success) {

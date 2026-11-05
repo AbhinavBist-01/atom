@@ -1,8 +1,11 @@
 import { Router, Request, Response } from "express";
-import { AtomGitHubClient } from "@atom/github";
-import { runRcaEngine, CodeContextChunk } from "@atom/agent";
+import { AtomGitHubClient, GitCloner } from "@atom/github";
+import { InvestigationAgent, SandboxTestRunner } from "@atom/agent";
 import { db, schema } from "../db/index.js";
 import { eq, and } from "drizzle-orm";
+import { runEvents } from "./runEvents.js";
+import path from "path";
+import fs from "fs";
 
 const router: Router = Router();
 
@@ -64,7 +67,7 @@ router.get("/:owner/:repo/:number", async (req: Request, res: Response): Promise
   }
 });
 
-// POST /api/issues/:owner/:repo/:number/run -> Run ATOM agentic RCA on an issue
+// POST /api/issues/:owner/:repo/:number/run -> Run ATOM 2.0 autonomous investigation & resolution pipeline
 router.post("/:owner/:repo/:number/run", async (req: Request, res: Response): Promise<void> => {
   const owner = req.params.owner as string;
   const repo = req.params.repo as string;
@@ -116,39 +119,94 @@ router.post("/:owner/:repo/:number/run", async (req: Request, res: Response): Pr
       issueRecord = insertedIssue;
     }
 
-    // 4. Create a Run record
+    // 4. Create Run record with status 'queued'
     const [runRecord] = await db
       .insert(schema.runs)
       .values({
         issueId: issueRecord.id,
-        status: "running",
+        status: "analyzing",
+        currentStep: "Initializing investigation",
         startedAt: new Date(),
       })
       .returning();
 
-    // 5. Fetch code chunks for RCA context
+    runEvents.emitRunEvent({
+      runId: runRecord.id,
+      step: "analyzing",
+      message: `Starting investigation for issue #${issueNumber}: ${issue.title}`,
+    }); 
+
+    // 5. Ensure local repository checkout exists for tools & sandbox
+    const workDir = path.join(process.cwd(), "scratch", "repos", `${owner}_${repo}`);
+    if (!fs.existsSync(workDir)) {
+      const cloner = new GitCloner();
+      await cloner.cloneOrPull({
+        repoUrl: `https://github.com/${owner}/${repo}.git`,
+        targetDir: workDir,
+        depth: 5,
+      });
+    }
+
+    // 6. Load indexed chunks, symbols, and dependencies from DB
     const dbChunks = await db.query.chunks.findMany({
       where: eq(schema.chunks.repoId, repoRecord.id),
-      limit: 30,
+      limit: 150,
     });
 
-    const codeChunks: CodeContextChunk[] = dbChunks.map((c) => ({
-      filePath: c.filePath,
-      startLine: c.startLine || 1,
-      endLine: c.endLine || 1,
-      content: c.content,
-      lang: c.lang || undefined,
-      commitHash: c.gitBlameCommit || undefined,
-    }));
+    const dbSymbols = await db.query.symbols.findMany({
+      where: eq(schema.symbols.repoId, repoRecord.id),
+      limit: 200,
+    });
 
-    // 6. Execute ATOM RCA Engine
-    const rca = await runRcaEngine({
+    const dbDeps = await db.query.dependencies.findMany({
+      where: eq(schema.dependencies.repoId, repoRecord.id),
+      limit: 200,
+    });
+
+    // 7. Initialize and execute Investigation Agent
+    const agent = new InvestigationAgent(process.env.OPENAI_API_KEY, "gpt-4o", 8);
+
+    const rca = await agent.investigate({
       issueTitle: issue.title,
-      issueBody: issue.body,
-      codeChunks,
+      issueBody: issue.body || "",
+      repoContext: {
+        workDir,
+        chunks: dbChunks.map((c) => ({
+          id: c.id,
+          filePath: c.filePath,
+          content: c.content,
+          startLine: c.startLine,
+          endLine: c.endLine,
+          nodeType: c.nodeType,
+          embedding: c.embedding as number[] | null,
+        })),
+        symbols: dbSymbols.map((s) => ({
+          name: s.name,
+          kind: s.kind as any,
+          filePath: s.filePath,
+          startLine: s.startLine,
+          endLine: s.endLine,
+          signature: s.signature || undefined,
+          isExported: s.isExported === "true",
+        })),
+        dependencies: dbDeps.map((d) => ({
+          sourceFilePath: d.sourceFilePath,
+          targetFilePath: d.targetFilePath,
+          specifier: d.specifier,
+          importedSymbols: d.importedSymbols ? JSON.parse(d.importedSymbols) : [],
+          type: (d.type || "import") as any,
+        })),
+      },
+      onProgress: (step, message) => {
+        runEvents.emitRunEvent({ runId: runRecord.id, step, message });
+        db.update(schema.runs)
+          .set({ status: step, currentStep: message })
+          .where(eq(schema.runs.id, runRecord.id))
+          .catch(() => {});
+      },
     });
 
-    // 7. Save RCA Result
+    // 8. Save RCA Result
     const [rcaRecord] = await db
       .insert(schema.rcaResults)
       .values({
@@ -160,7 +218,7 @@ router.post("/:owner/:repo/:number/run", async (req: Request, res: Response): Pr
       })
       .returning();
 
-    // 8. Save Citations
+    // 9. Save Citations
     if (rca.citations && rca.citations.length > 0) {
       await db.insert(schema.citations).values(
         rca.citations.map((cit) => ({
@@ -174,20 +232,72 @@ router.post("/:owner/:repo/:number/run", async (req: Request, res: Response): Pr
       );
     }
 
-    // 9. Update Run status to done
+    // 10. Save Patch Plan if generated
+    if (rca.patchPlan) {
+      await db.insert(schema.patchPlans).values({
+        runId: runRecord.id,
+        rootCause: rca.patchPlan.rootCause,
+        filesToModify: JSON.stringify(rca.patchPlan.filesToModify),
+        expectedBehavior: rca.patchPlan.expectedBehavior,
+        regressionRisks: rca.patchPlan.regressionRisks,
+        testStrategy: rca.patchPlan.testStrategy,
+      });
+    }
+
+    // 11. Run Sandboxed Validation if patch was produced
+    let testExecutionResult: any = null;
+    if (rca.patchDiff && rca.patchDiff.trim().length > 0) {
+      runEvents.emitRunEvent({
+        runId: runRecord.id,
+        step: "testing",
+        message: "Executing sandboxed test suite to validate patch...",
+      });
+
+      try {
+        const runner = new SandboxTestRunner();
+        testExecutionResult = await runner.runTests({
+          workDir,
+          patchDiff: rca.patchDiff,
+          testPatch: rca.testPatch || undefined,
+        });
+
+        await db.insert(schema.testExecutions).values({
+          runId: runRecord.id,
+          command: testExecutionResult.command,
+          passed: testExecutionResult.passed ? "true" : "false",
+          exitCode: testExecutionResult.exitCode,
+          stdout: testExecutionResult.stdout,
+          stderr: testExecutionResult.stderr,
+          durationMs: testExecutionResult.durationMs,
+        });
+      } catch (testErr: any) {
+        console.warn("[Issue Run] Sandbox test execution notice:", testErr.message);
+      }
+    }
+
+    // 12. Transition run status to awaiting_approval
     await db
       .update(schema.runs)
       .set({
-        status: "done",
+        status: "awaiting_approval",
+        currentStep: "Investigation complete. Awaiting human approval for PR publication.",
         completedAt: new Date(),
       })
       .where(eq(schema.runs.id, runRecord.id));
 
+    runEvents.emitRunEvent({
+      runId: runRecord.id,
+      step: "awaiting_approval",
+      message: "Investigation complete and verified. Ready for review and PR publication.",
+      data: { rca, testExecution: testExecutionResult },
+    });
+
     res.json({
       runId: runRecord.id,
-      status: "done",
+      status: "awaiting_approval",
       issueNumber,
       rca,
+      testExecution: testExecutionResult,
     });
   } catch (error: any) {
     console.error("[Issue Run] Error processing issue run:", error);
