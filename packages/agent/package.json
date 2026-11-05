@@ -1,0 +1,20 @@
+{
+  "name": "@atom/agent",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsc -b --watch"
+  },
+  "dependencies": {
+    "@atom/core": "workspace:*",
+    "@atom/rag": "workspace:*",
+    "dotenv": "^18.0.9",
+    "openai": "^4.83.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

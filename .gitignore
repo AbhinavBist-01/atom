@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build & Output Artifacts
+dist/
+**/dist/
+.next/
+out/
+build/
+*.tsbuildinfo
+**/*.tsbuildinfo
+
+# Environment & Local Secrets
+.env
+.env.local
+.env.*.local
+*.log
+
+# System & OS Files
+.DS_Store
+Thumbs.db
+
+# IDE & Editors
+.vscode/
+.idea/
+# Temporary Workspace & Scratch
+scratch/
+.agents
