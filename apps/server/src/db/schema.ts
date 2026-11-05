@@ -120,6 +120,20 @@ export const testExecutions = pgTable("test_executions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const verificationReports = pgTable("verification_reports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  runId: uuid("run_id").references(() => runs.id, { onDelete: "cascade" }),
+  prEligible: text("pr_eligible").default("false"),
+  humanApprovalRequired: text("human_approval_required").default("true"),
+  repairAttempts: integer("repair_attempts").default(0),
+  stages: text("stages").notNull(), // JSON stringified VerificationStage[]
+  toolchain: text("toolchain"), // JSON stringified RepoToolchain
+  security: text("security"), // JSON stringified SecurityCheckResult
+  regressionTest: text("regression_test"),
+  summary: text("summary").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const rcaResults = pgTable("rca_results", {
   id: uuid("id").primaryKey().defaultRandom(),
   runId: uuid("run_id").references(() => runs.id, { onDelete: "cascade" }),

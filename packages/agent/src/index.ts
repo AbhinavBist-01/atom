@@ -5,6 +5,12 @@ import { RcaResult, RcaResultSchema } from "@atom/core";
 export * from "./tools.js";
 export * from "./sandbox.js";
 export * from "./investigator.js";
+export * from "./patchValidator.js";
+export * from "./workspace.js";
+export * from "./toolchain.js";
+export * from "./verificationEngine.js";
+export * from "./regressionGenerator.js";
+export * from "./repairOrchestrator.js";
 
 export interface CodeContextChunk {
   filePath: string;
@@ -38,82 +44,51 @@ export async function runRcaEngine(input: AnalyzeIssueInput): Promise<RcaResult>
 
   const contextFormatted = input.codeChunks
     .map(
-      (c, idx) =>
-        `--- Chunk #${idx + 1} ---\nFile: ${c.filePath} (Lines ${c.startLine}-${c.endLine})\nLanguage: ${c.lang || "unknown"}\n${c.commitHash ? `Commit: ${c.commitHash}\n` : ""}\nCode:\n${c.content}`
+      (c) =>
+        `File: ${c.filePath} (Lines ${c.startLine}-${c.endLine})\n\`\`\`${c.lang || ""}\n${c.content}\n\`\`\``
     )
     .join("\n\n");
 
-  const systemPrompt = `You are ATOM, an Autonomous GitHub Issue Resolution Agent.
-Your job is to produce evidence-first root cause analysis (RCA) and resolution patches for software issues.
+  const systemPrompt = `You are ATOM, an autonomous software engineering agent specialized in resolving GitHub issues with evidence-first precision.
+Analyze the provided GitHub issue and code context to:
+1. Identify the root cause with specific file + line evidence.
+2. Formulate multiple hypotheses and verify them against context.
+3. Formulate a structured patch plan (files to modify, expected behavior, regression risks).
+4. Provide a valid unified diff patch (using --- a/ and +++ b/ headers) resolving the issue.
+5. Provide a test case or patch to reproduce and prevent regression.
 
-CRITICAL INSTRUCTIONS:
-1. Every root cause claim MUST be anchored to specific files and line ranges from the provided code context.
-2. Output a valid JSON object strictly adhering to the schema below.
-3. The patchDiff field MUST be a valid unified diff (--- a/file +++ b/file).
-4. The testPatch field MUST contain automated unit test(s) covering the regression.
-5. List file:line citations backing your RCA under 'citations'.
-6. Evaluate your confidence as 'low', 'medium', or 'high'.
-
-JSON Output Schema:
-{
-  "rootCause": "Detailed RCA anchored to file:line evidence",
-  "confidence": "high" | "medium" | "low",
-  "citations": [
-    {
-      "filePath": "src/auth.ts",
-      "startLine": 42,
-      "endLine": 81,
-      "commitHash": "abc1234",
-      "relevanceScore": 0.95
-    }
-  ],
-  "patchDiff": "--- a/src/auth.ts\\n+++ b/src/auth.ts\\n@@ -42,5 +42,5 @@...",
-  "testPatch": "describe('auth fix', () => { it('should handle concurrent refresh', () => { ... }) })"
-}`;
+Default model: process.env.OPENAI_MODEL or gpt-6-luna.
+Always return JSON adhering strictly to the requested schema.`;
 
   const userPrompt = `Issue Title: ${input.issueTitle}
 
 Issue Description:
 ${input.issueBody}
 
-Codebase Context Chunks:
-${contextFormatted || "No code chunks retrieved."}`;
+Code Context:
+${contextFormatted || "No indexed chunks available. Formulate analysis based on issue description."}`;
 
-  const response = await openai.chat.completions.create({
+  const completion = await openai.chat.completions.create({
     model: input.model || process.env.OPENAI_MODEL || "gpt-6-luna",
+    response_format: { type: "json_object" },
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt }
     ],
-    response_format: { type: "json_object" },
     temperature: 0.1
   });
 
-  const rawJson = response.choices[0]?.message?.content || "{}";
-  let parsed: any;
-  try {
-    parsed = JSON.parse(rawJson);
-  } catch {
-    parsed = {};
-  }
+  const rawJson = completion.choices[0]?.message?.content || "{}";
+  const parsed = JSON.parse(rawJson);
 
-  const validated = RcaResultSchema.safeParse(parsed);
-  if (validated.success) {
-    return validated.data;
-  }
-
-  return {
-    rootCause: parsed.rootCause || "Root cause analysis completed.",
-    confidence: (["low", "medium", "high"].includes(parsed.confidence) ? parsed.confidence : "medium") as "low" | "medium" | "high",
-    citations: Array.isArray(parsed.citations) ? parsed.citations : [],
+  return RcaResultSchema.parse({
+    rootCause: parsed.rootCause || "Root cause analysis inconclusive.",
+    confidence: parsed.confidence || "medium",
+    citations: parsed.citations || [],
     patchDiff: parsed.patchDiff || "",
-    testPatch: parsed.testPatch || ""
-  };
-}
-
-export function analyzeIssue(issueBody: string): Partial<RcaResult> {
-  return {
-    rootCause: `Analyzing issue: ${issueBody.substring(0, 50)}...`,
-    confidence: "medium"
-  };
+    testPatch: parsed.testPatch || "",
+    hypotheses: parsed.hypotheses || [],
+    patchPlan: parsed.patchPlan,
+    isInconclusive: parsed.isInconclusive || false
+  });
 }
