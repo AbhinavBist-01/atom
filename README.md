@@ -1,7 +1,7 @@
 <div align="center">
 
 # ⚛️ ATOM
-### **Autonomous GitHub Issue Resolution Agent**
+### **Autonomous Software Engineering & GitHub Issue Resolution Engine**
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7+-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js 16](https://img.shields.io/badge/Next.js_16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
@@ -9,14 +9,14 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_v3-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
 [![Neon Postgres](https://img.shields.io/badge/Neon_Postgres-00E599?style=for-the-badge&logo=postgresql&logoColor=black)](https://neon.tech/)
-[![OpenAI GPT-4o](https://img.shields.io/badge/OpenAI-GPT--4o_&_Embeddings-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com/)
+[![OpenAI GPT-6 Luna](https://img.shields.io/badge/OpenAI-GPT--6_Luna_&_Embeddings-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com/)
 [![Redis & BullMQ](https://img.shields.io/badge/Redis_&_BullMQ-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://bullmq.io/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)](https://pnpm.io/)
 
 <br/>
 
-**Deterministic, Evidence-First Root Cause Analysis · Unified Diff Patches · Unit Test Synthesis · Sandboxed Verification · Automated GitHub PRs**
+**Evidence-First Root Cause Analysis · AST Repository Intelligence · Git Worktree Isolation · 8-Stage Verification Engine · Dual Regression Testing · Self-Correction Loop · Automated GitHub Draft PRs**
 
 <br/>
 
@@ -28,217 +28,156 @@
 
 ---
 
-## 🌟 Overview & Key Differentiators
+## 🌟 Core Principle
 
-ATOM is an autonomous AI agent designed for **evidence-grounded GitHub issue resolution**. Unlike generic coding assistants that guess where bugs originate, ATOM produces strict, line-anchored citations, valid unified diff patches, and regression unit tests verified in a sandbox before publishing to GitHub.
+> **ATOM must never confuse generated code with verified code.**  
+> A patch is eligible for a draft PR **only** when its verification evidence supports that decision.
+
+---
+
+## 🚀 What Makes ATOM Different
+
+Unlike generic coding assistants that guess where bugs originate and output untested code, ATOM is a **full-lifecycle autonomous software engineering agent**:
+
+1. **Evidence-Anchored Root Cause Analysis**: Identifies exact files, line numbers, and commit blame.
+2. **Isolated Git Worktrees**: Every verification task runs in an isolated worktree branch with credentials stripped from the child process environment.
+3. **Repository-Aware Toolchain Discovery**: Automatically detects programming languages, frameworks, package managers, and test commands (Node/TS, Python, Java, C++).
+4. **8-Stage Autonomous Verification Engine**: Deterministically validates patches against Security, Apply, Build, Lint, Typecheck, Unit Tests, Integration Tests, and Regression Tests.
+5. **Dual-Phase Regression Reproduction**: Synthesizes a test that **fails on baseline unpatched code** (reproducing the bug) and **passes post-patch** (proving the fix).
+6. **Self-Correction Repair Loop**: If verification fails, a Failure Analysis Agent diagnoses stdout/stderr logs and generates revised patches across up to 3 automated repair iterations.
+7. **Deterministic Verification Gate**: Blocks PR creation if build, security, or tests fail, with human approval gates.
 
 ```
 Root cause : race condition in token refresh lock
 Evidence   : src/auth/refresh.ts:42-81
 Introduced : commit 8f31a2c (PR #392)
-Missing    : concurrent-refresh test case
-Fix        : src/auth/refresh.ts — wrap refresh() with mutex lock
+Repro Test : tests/atom_regression.test.ts (Failed baseline -> Passed post-patch)
+Gate Check : 8/8 Stages PASSED (Build, Lint, Typecheck, Unit, Security)
+Draft PR   : Closes #392 with full verification scorecard attached
 ```
 
 ---
 
-## 🛠️ Languages, Libraries & Tech Stack
+## 📐 High-Level Architecture & Pipeline Flow
 
-### 🔹 Monorepo Workspace Structure
+```mermaid
+flowchart TD
+    Issue["GitHub Issue Intake"] --> Intake["Context Fetcher & AST Graph"]
+    Intake --> HyDE["HyDE Engine + Hybrid RAG (pgvector + BM25)"]
+    HyDE --> Agent["Investigation Agent (Multi-Tool Loop)"]
+    
+    Agent --> Plan["Patch Planning & Unified Diff Generation"]
+    Plan --> PVal["Patch Validator (Syntax & Security Scanner)"]
+    
+    PVal -->|Valid| WT["Isolated Workspace (Git Worktree)"]
+    PVal -->|Invalid| Repair["Failure Analysis & Repair Loop"]
+    
+    WT --> RegTest["Dual Regression Test Generator"]
+    RegTest --> Baseline["Baseline Check: Must FAIL on unpatched code"]
+    
+    Baseline --> Apply["Apply Patch in Worktree"]
+    Apply --> Discovery["Repository Toolchain Detector"]
+    
+    Discovery --> VEngine["8-Stage Autonomous Verification Engine"]
+    
+    subgraph VEngine["8-Stage Verification Matrix"]
+        S1["1. Patch Apply Check"]
+        S2["2. Build Verification"]
+        S3["3. Lint Verification"]
+        S4["4. Static Type Checking"]
+        S5["5. Unit Test Suite"]
+        S6["6. Integration Tests"]
+        S7["7. Regression Test (Pass)"]
+        S8["8. Security & Secret Checks"]
+    end
+    
+    VEngine --> VGate{"Deterministic Verification Gate"}
+    
+    VGate -->|Any Stage Fails| Repair
+    Repair -->|Attempt < 3| Agent
+    Repair -->|Attempt >= 3| HumanFail["Halt & Request Human Review"]
+    
+    VGate -->|All Stages Passed| VReport["Verification Report (Persisted to DB)"]
+    VReport --> UI["Interactive Next.js Verification Dashboard"]
+    VReport --> DraftPR["GitHub Draft PR (Evidence Scorecard Attached)"]
+```
+
+---
+
+## 🛠️ Monorepo Structure
 
 ```
 atom/
 ├── 📁 apps/
-│   ├── 🌐 web/          # Next.js 16 (App Router), React 19, Tailwind CSS UI
-│   └── ⚙️ server/       # Express.js REST API, Better Auth, BullMQ job runner
+│   ├── 🌐 web/          # Next.js 16 (App Router), React 19, Tailwind CSS UI Dashboard
+│   └── ⚙️ server/       # Express.js REST API, Better Auth, Drizzle ORM, BullMQ Worker
 └── 📁 packages/
-    ├── 📦 core/         # Shared Zod schemas (RCA, Citations, Runs) & domain types
-    ├── 🐙 github/       # Octokit client, dynamic installation auth, Git cloner
-    ├── 🌳 parser/       # Tree-sitter AST structural code chunker & markdown parser
-    ├── 🔍 rag/          # HyDE, OpenAI text-embedding-3-small, BM25, RRF hybrid search
-    └── 🤖 agent/        # LLM RCA engine (gpt-4o), patch generator & SandboxTestRunner
-```
-
-### 🔹 Categorized Tech Stack Matrix
-
-| Category | Logo / Badge | Technology | Purpose & Details |
-|:---|:---:|:---|:---|
-| **Languages** | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/typescript/typescript-original.svg" width="24" height="24" alt="TS"/> | **TypeScript 5.7+** | End-to-end type safety across apps and workspace packages. |
-| **Runtime** | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/nodejs/nodejs-original.svg" width="24" height="24" alt="Node"/> | **Node.js 20+** | High-performance asynchronous backend runtime. |
-| **Frontend Framework** | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/nextjs/nextjs-original.svg" width="24" height="24" alt="Next"/> | **Next.js 16 (App Router)** | Obsidian glassmorphic UI (`#050507`), Server Actions, Edge Auth Middleware. |
-| **UI & Styling** | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/tailwindcss/tailwindcss-original.svg" width="24" height="24" alt="Tailwind"/> | **React 19 + Tailwind CSS** | Minimalist GitHub-dark design system, Lucide icons, live workbench streaming. |
-| **Backend API** | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/express/express-original.svg" width="24" height="24" alt="Express"/> | **Express.js** | REST API endpoints, CORS credential sessions, dynamic reverse proxies. |
-| **Authentication** | <img src="https://avatars.githubusercontent.com/u/148011244?s=200&v=4" width="24" height="24" alt="Better Auth"/> | **Better Auth** | GitHub OAuth provider, scoped permissions (`repo`, `read:user`, `user:email`). |
-| **Database & Vector** | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg" width="24" height="24" alt="Postgres"/> | **Neon PostgreSQL + pgvector** | 1536-dim vector similarity search + 6 relational tables with Drizzle ORM. |
-| **AI & Embeddings** | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/openai/openai-original.svg" width="24" height="24" alt="OpenAI"/> | **OpenAI (`gpt-4o`, embeddings)** | Hypothetical Document Embeddings (HyDE), `text-embedding-3-small`, Zod JSON outputs. |
-| **Code Parser** | <img src="https://tree-sitter.github.io/tree-sitter/assets/images/tree-sitter-small.png" width="24" height="24" alt="Tree-sitter"/> | **Tree-sitter AST Parser** | Semantic code chunking by function/class/method bounds + git blame tagging. |
-| **GitHub Automation** | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/github/github-original.svg" width="24" height="24" alt="GitHub"/> | **Octokit REST & App Auth** | Dynamic installation token management, shallow clones, bot PR & comment creation. |
-| **Job Queue & Cache** | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/redis/redis-original.svg" width="24" height="24" alt="Redis"/> | **BullMQ + Redis** | Background asynchronous repository indexing, embedding batcher, retry queues. |
-| **Testing & Sandbox** | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/vitest/vitest-original.svg" width="24" height="24" alt="Vitest"/> | **Vitest + Node Sandbox** | Isolated `git apply` patch verification & unit test execution before PR creation. |
-| **Monorepo Tooling** | <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/pnpm/pnpm-original.svg" width="24" height="24" alt="pnpm"/> | **pnpm Workspaces + Docker** | Fast multi-package builds, strict ESM modularity, containerized local services. |
-
----
-
-## 📐 High-Level Design & System Diagrams
-
-### 1. End-to-End System Architecture
-
-```
-                                GitHub Ecosystem
-                 (Webhooks / Issues / Repositories / Pull Requests)
-                                       │
-                                       ▼
-                     ┌───────────────────────────────────┐
-                     │   Better Auth Social Gate (OAuth) │
-                     └─────────────────┬─────────────────┘
-                                       │
-                    ┌──────────────────┴──────────────────┐
-                    ▼                                     ▼
-        ┌───────────────────────┐             ┌───────────────────────┐
-        │ apps/web (Next.js 16) │             │  apps/server (Express)│
-        │ • Obsidian Dashboard  │◄──Proxy/───►│ • REST API Endpoints  │
-        │ • Synced Repositories │   Rewrites  │ • Webhook Receiver    │
-        │ • Issue RCA Workbench │             │ • BullMQ Worker Queue │
-        └───────────────────────┘             └───────────┬───────────┘
-                                                          │
-          ┌───────────────────────────────────────────────┴──────────────────────────────┐
-          │                                                                              │
-          ▼                                                                              ▼
-┌───────────────────┐                                                          ┌───────────────────┐
-│ Codebase Indexing │                                                          │ Hybrid RAG & RCA  │
-│ • shallow git clone│                                                         │ • HyDE Query Gen  │
-│ • Tree-sitter AST │                                                          │ • pgvector Dense  │
-│ • Line & Blame Map│                                                          │ • BM25 Sparse     │
-│ • pgvector Upsert │                                                          │ • RRF Fusion      │
-└─────────┬─────────┘                                                          └─────────┬─────────┘
-          │                                                                              │
-          ▼                                                                              ▼
-┌───────────────────┐                                                          ┌───────────────────┐
-│ Database (Neon DB)│                                                          │ Sandboxed Runner  │
-│ • repositories    │◄─────────────────────────────────────────────────────────┤ • git apply patch │
-│ • chunks + vector │                                                          │ • vitest / jest   │
-│ • issues & runs   │                                                          │ • Bot PR / Comment│
-└───────────────────┘                                                          └───────────────────┘
+    ├── 📦 core/         # Shared Zod schemas (RCA, VerificationReport, PatchPlan, Toolchain)
+    ├── 🐙 github/       # Octokit client, installation tokens, Git worktree cloner
+    ├── 🌳 parser/       # Tree-sitter AST structural code parser & symbol extractor
+    ├── 🔍 rag/          # HyDE, OpenAI text-embedding-3-small, BM25, RRF hybrid retriever
+    └── 🤖 agent/        # Investigation agent, WorkspaceManager, PatchValidator, VerificationEngine
 ```
 
 ---
 
-### 2. Codebase Indexing Pipeline (Repo ➔ Vector Store)
+## 🧩 Categorized Tech Stack
 
-```mermaid
-flowchart TD
-    A[Connect Repo / Push Webhook] --> B[BullMQ: indexRepo Job]
-    B --> C[Shallow Git Clone via simple-git]
-    C --> D{File Extension Classifier}
-    
-    D -->|Code .ts, .js, .py, .go, .java, .rs| E[Tree-sitter AST Parser]
-    D -->|Docs .md, .txt| F[Section & Paragraph Parser]
-    
-    E --> G[Extract Functions, Classes, Methods]
-    F --> G
-    
-    G --> H[Tag Metadata: filePath, startLine, endLine, gitBlameCommit]
-    H --> I[OpenAI text-embedding-3-small]
-    I --> J[Neon pgvector Upsert]
-    H --> K[BM25 Index Store]
-```
+| Category | Technology | Purpose & Details |
+|:---|:---|:---|
+| **Language** | **TypeScript 5.7+** | Strict end-to-end type safety across the monorepo. |
+| **Frontend** | **Next.js 16 (App Router) + React 19** | Obsidian glassmorphic UI (`#050507`), Server Components, Live SSE Streaming. |
+| **Backend API** | **Express.js** | REST endpoints, webhook processor, SSE event broadcasting. |
+| **Authentication** | **Better Auth** | GitHub OAuth provider with dynamic handle resolution and user scoping. |
+| **Database** | **Neon PostgreSQL + pgvector** | Serverless relational store, vector similarity, and migration system. |
+| **AI / LLM** | **OpenAI (`gpt-6-luna`)** | Multi-tool investigation, failure analysis, regression synthesis, JSON mode. |
+| **Code Parser** | **Tree-sitter AST** | Structural chunking by function, class, and interface line bounds. |
+| **Sandboxing** | **Git Worktrees** | Isolated checkout environments preventing contamination of host branches. |
+| **Verification** | **ATOM Verification Engine** | 8-stage deterministic verification pipeline with self-correction. |
+| **Test Runner** | **Vitest** | Automated unit tests covering core agent tools, parser, RAG, and verification. |
 
 ---
 
-### 3. Evidence-First Hybrid RAG & RCA Resolution Pipeline
+## 🛡️ The 8-Stage Autonomous Verification Engine
 
-```mermaid
-flowchart TD
-    A[GitHub Issue Intake] --> B[HyDE Query Generator: LLM crafts hypothetical fix]
-    B --> C[OpenAI Embeddings: text-embedding-3-small]
-    
-    C --> D[Dense Vector Search: pgvector Cosine Top-50]
-    A --> E[Sparse Keyword Search: BM25 / FTS Top-50]
-    
-    D --> F[Reciprocal Rank Fusion - RRF]
-    E --> F
-    
-    F --> G[Context Builder: Issue + Code Chunks + Git Blame + Related PRs]
-    G --> H[LLM Reasoning Engine: gpt-4o / o3-mini]
-    
-    H --> I[Structured RCA Output]
-    I --> J[File:Line Citations e.g. auth.ts:42-81]
-    I --> K[Unified Diff Patch --- a/... +++ b/...]
-    I --> L[Synthesized Unit Tests]
-    
-    K --> M[Sandbox Verification: git apply + test run]
-    L --> M
-    M -->|Passed| N[Publish atom-agent bot PR / Issue Comment]
-```
+| Stage | Name | Verification Action | Blocking Condition |
+|:---:|:---|:---|:---|
+| **1** | `patch_apply` | Validates unified diff headers and runs `git apply --check` in the worktree. | Rejects malformed patches or conflicts. |
+| **2** | `build` | Runs repository build command (`npm run build`, `mvn compile`, `cmake`, etc.). | Fails on compilation errors. |
+| **3** | `lint` | Executes repository linter (`eslint`, `ruff`, `flake8`, `checkstyle`). | Flags lint violations. |
+| **4** | `typecheck` | Executes static type checker (`tsc --noEmit`, `mypy`). | Fails on type inconsistencies. |
+| **5** | `unit_tests` | Executes existing repository unit test suite. | Prevents regressions in existing features. |
+| **6** | `integration_tests` | Runs integration tests if configured for the repository. | Skipped if unconfigured. |
+| **7** | `regression_tests` | Runs newly synthesized regression test against patched code. | Fails if the original bug is not resolved. |
+| **8** | `security_checks` | Scans diff for secrets, private keys, hazardous commands (`curl \| sh`, `rm -rf /`). | Blocks sensitive file tampering. |
 
 ---
 
-## 🔍 Architecture: How Things Work
-
-### 1. Better Auth & GitHub Social Gate
-- Unauthenticated users are gated at the root `/` with a 1-click GitHub OAuth CTA.
-- Edge middleware protects `/workspace` and `/issues`.
-- Session tokens use standard HTTP cookies with CORS `credentials: true` and Next.js transparent API rewrites (`/api/*` ➔ Express port 4000).
-
-### 2. Automatic User Handle & Multi-Installation Discovery
-- Resolves GitHub handles dynamically from avatar IDs (`/user/:id`), eliminating user-display-name mismatches.
-- Discovers user repositories and organization repositories where the ATOM GitHub App is installed via `@octokit/auth-app`.
-
-### 3. Tree-sitter AST Code Parsing
-- Instead of naive character chunking, ATOM parses code into semantic AST blocks (functions, classes, modules).
-- Each chunk preserves `filePath`, `startLine`, `endLine`, `nodeType`, `lang`, and the last-modifying `gitBlameCommit`.
-
-### 4. Hybrid RAG (HyDE + pgvector + BM25 + RRF)
-- **HyDE (Hypothetical Document Embeddings)**: Generates a hypothetical code fix document from the issue description before embedding to bridge the semantic gap between issue text and source code.
-- **Dense Vector Search**: Queries Neon `pgvector` for semantic cosine similarity.
-- **Sparse BM25 Search**: Matches exact symbols, function names, and error messages.
-- **Reciprocal Rank Fusion (RRF)**: Merges dense and sparse rankings using the standard formula:
-  $$RRF(d) = \sum_{m \in M} \frac{1}{k + r_m(d)}$$
-
-### 5. Evidence-First RCA & Structured Output
-- Rather than vague suggestions, ATOM produces structured Zod outputs:
-  - **Root Cause**: Pinpoints exact logic errors, race conditions, or regressions.
-  - **Citations**: Direct references to `filePath:startLine-endLine` backed by commit blame.
-  - **Unified Diff**: Syntactically valid git patch format.
-  - **Test Suite**: Dedicated unit test covering the regression.
-
-### 6. Sandboxed Patch Verification & Bot Publishing
-- Applies the generated diff in an isolated shallow clone directory using `git apply`.
-- Executes unit test suites in a child process sandbox.
-- Dynamically resolves installation tokens to post comments or open Pull Requests on GitHub under `atom-agent[bot]`.
-
----
-
-## 🚀 How to Run Locally
+## ⚡ Getting Started Locally
 
 ### Prerequisites
-- **Node.js**: >= 20.0.0
-- **pnpm**: >= 9.0.0 (`npm install -g pnpm`)
-- **Docker & Docker Compose** (for local Redis/Postgres) *OR* a **Neon DB URL**
+- **Node.js**: `>= 20.0.0`
+- **pnpm**: `>= 9.0.0` (`npm install -g pnpm`)
+- **Neon PostgreSQL** or local Postgres with `pgvector`
+- **Redis** (optional for local BullMQ job queue)
 
 ---
 
-### Step 1: Clone & Install Dependencies
+### Step 1: Clone & Install
 
 ```bash
 git clone https://github.com/AbhinavBist-01/atom.git
 cd atom
 
-# Install monorepo dependencies across all packages and apps
+# Install monorepo dependencies
 pnpm install
 ```
 
 ---
 
-### Step 2: Configure Environment Variables
+### Step 2: Environment Configuration
 
-Copy the `.env.example` template to `.env` in the root directory:
-
-```bash
-cp .env.example .env
-```
-
-Fill in the required keys:
+Create a `.env` file in the project root:
 
 ```env
 # GitHub App Configuration
@@ -248,103 +187,72 @@ GITHUB_WEBHOOK_SECRET=your_webhook_secret
 GITHUB_CLIENT_ID=your_github_oauth_client_id
 GITHUB_CLIENT_SECRET=your_github_oauth_client_secret
 
+# Optional fallback token for private cloning
+GITHUB_TOKEN=ghp_...
+
 # Better Auth
 BETTER_AUTH_SECRET=your_random_32_char_secret
 BETTER_AUTH_URL=http://localhost:4000
 
-# OpenAI API Key
-OPENAI_API_KEY=sk-proj-...
+# OpenAI Configuration
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-6-luna
 
-# Database (Neon Postgres with pgvector or Local Postgres)
-DATABASE_URL=postgresql://user:password@localhost:5432/atom_db
+# Database (Neon PostgreSQL with pgvector)
+DATABASE_URL=postgresql://user:password@ep-...neon.tech/atom?sslmode=require
 
-# Redis (BullMQ queue)
+# Redis
 REDIS_URL=redis://localhost:6379
 
-# Ports & URLs
+# Server & Client Ports
 NEXT_PUBLIC_SERVER_URL=http://localhost:4000
 PORT=4000
 ```
 
 ---
 
-### Step 3: Start Local Infrastructure (Docker)
+### Step 3: Database Migrations
 
-If you are using local Docker services for Postgres and Redis:
+Apply database schema migrations to Neon PostgreSQL:
 
 ```bash
-# Start Postgres (pgvector) and Redis containers
-pnpm docker:up
+pnpm --filter @atom/server exec tsx src/db/apply-migrations.ts
 ```
 
 ---
 
-### Step 4: Setup Database Schema & Migrations
+### Step 4: Run Tests
 
-Push the Drizzle ORM schema directly to your database:
+Execute the Vitest test suite across all packages:
 
 ```bash
-# Push schema to database
-pnpm db:push
-
-# Optional: Open Drizzle Studio UI to inspect tables
-pnpm db:studio
+pnpm test
 ```
 
 ---
 
-### Step 5: Build Packages & Start Development Server
+### Step 5: Start Development Server
 
 ```bash
-# Build internal packages (@atom/core, @atom/github, @atom/parser, @atom/rag, @atom/agent)
-pnpm build:packages
-
-# Run Next.js frontend (port 3000) and Express server (port 4000) concurrently
+# Starts both Express backend (:4000) and Next.js frontend (:3000)
 pnpm dev
 ```
 
-You can also run individual services separately:
-
-```bash
-# Terminal 1: Backend Server (port 4000)
-pnpm dev:server
-
-# Terminal 2: Frontend Web App (port 3000)
-pnpm dev:web
-```
+Visit **`http://localhost:3000`** in your browser.
 
 ---
 
-### Step 6: Using the Application
-
-1. Open **`http://localhost:3000`** in your browser.
-2. Click **"Sign in with GitHub"** to authenticate via Better Auth.
-3. In **`/workspace`**:
-   - Browse your **Synced Repositories**.
-   - Click **"Connect & Index"** on any repository to run the Tree-sitter AST chunker and pgvector indexing.
-4. In **`/issues`**:
-   - Select an indexed repository to view open GitHub issues.
-   - Click an issue to launch the **Issue Workbench**.
-   - Review the **Root Cause Analysis**, inspect **File:Line Citations**, preview the **Unified Diff Patch**, run **Sandboxed Test Verification**, and click **"Create PR"** or **"Post Comment"** to publish the fix to GitHub.
-
----
-
-## 📋 Monorepo CLI Command Reference
+## 📋 Monorepo CLI Reference
 
 | Command | Description |
 |---|---|
-| `pnpm dev` | Starts server and web frontend concurrently |
+| `pnpm dev` | Starts backend and frontend development servers concurrently |
+| `pnpm build` | Compiles all 5 workspace packages and Next.js web application |
+| `pnpm test` | Runs 20 unit tests across parser, RAG, agent tools, and verification |
+| `pnpm build:packages` | Compiles TypeScript for internal `@atom/*` packages |
+| `pnpm dev:server` | Starts Express backend server only on `http://localhost:4000` |
 | `pnpm dev:web` | Starts Next.js frontend only on `http://localhost:3000` |
-| `pnpm dev:server` | Builds packages and starts Express API on `http://localhost:4000` |
-| `pnpm build` | Builds all packages (`packages/*`) and applications (`apps/*`) |
-| `pnpm build:packages` | Compiles TypeScript for all 5 internal packages |
-| `pnpm build:server` | Compiles Express backend |
-| `pnpm build:web` | Creates optimized Next.js 16 production build |
-| `pnpm db:push` | Pushes Drizzle schema definitions to PostgreSQL |
-| `pnpm db:studio` | Launches Drizzle Studio GUI for database inspection |
 | `pnpm docker:up` | Starts local PostgreSQL (`pgvector`) and Redis containers |
-| `pnpm docker:down` | Stops local Docker containers |
-| `pnpm test` | Runs Vitest unit test suite across the monorepo |
 
 ---
 
