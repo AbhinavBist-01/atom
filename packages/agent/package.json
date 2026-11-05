@@ -10,11 +10,13 @@
   },
   "dependencies": {
     "@atom/core": "workspace:*",
+    "@atom/parser": "workspace:*",
     "@atom/rag": "workspace:*",
     "dotenv": "^18.0.9",
     "openai": "^4.83.0"
   },
   "devDependencies": {
+    "@types/node": "^22.10.10",
     "typescript": "^5.7.3"
   }
 }
