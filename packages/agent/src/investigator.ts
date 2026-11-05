@@ -23,7 +23,7 @@ export class InvestigationAgent {
   private model: string;
   private maxIterations: number;
 
-  constructor(apiKey?: string, model: string = "gpt-4o", maxIterations: number = 8) {
+  constructor(apiKey?: string, model: string = process.env.OPENAI_MODEL || "gpt-6-luna", maxIterations: number = 8) {
     const key = apiKey || process.env.OPENAI_API_KEY;
     if (!key) {
       throw new Error("OPENAI_API_KEY is required for InvestigationAgent.");

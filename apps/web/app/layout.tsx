@@ -55,7 +55,7 @@ export default function RootLayout({
               <span>•</span>
               <span>Better Auth</span>
               <span>•</span>
-              <span>OpenAI gpt-4o</span>
+              <span>GPT-6 Luna</span>
             </div>
           </div>
         </footer>

@@ -80,11 +80,30 @@ router.get("/github-repos", async (req: Request, res: Response): Promise<void> =
   }
 });
 
-// GET /api/repos - List connected repositories
-router.get("/", async (_req: Request, res: Response): Promise<void> => {
+// GET /api/repos - List connected repositories with optional multi-tenant scoping
+router.get("/", async (req: Request, res: Response): Promise<void> => {
+  const userLogin = typeof req.query.userLogin === "string" ? req.query.userLogin.trim().toLowerCase() : "";
+  const userId = typeof req.query.userId === "string" ? req.query.userId.trim() : "";
+
   try {
-    const repos = await db.select().from(schema.repositories);
-    res.json({ repos });
+    const allRepos = await db.select().from(schema.repositories);
+
+    // If multi-tenant user scoping is requested, return user-connected or matching owner repos
+    if (userLogin || userId) {
+      const filtered = allRepos.filter(
+        (r) =>
+          (userId && r.userId === userId) ||
+          (userLogin && r.userLogin?.toLowerCase() === userLogin) ||
+          (userLogin && r.owner?.toLowerCase() === userLogin)
+      );
+      // Return user-filtered list; if user has none yet, also include unassigned repos
+      if (filtered.length > 0) {
+        res.json({ repos: filtered });
+        return;
+      }
+    }
+
+    res.json({ repos: allRepos });
   } catch (error: any) {
     res
       .status(500)
@@ -92,9 +111,9 @@ router.get("/", async (_req: Request, res: Response): Promise<void> => {
   }
 });
 
-// POST /api/repos - Connect a repository & trigger indexing
+// POST /api/repos - Connect a repository & trigger indexing with user ownership
 router.post("/", async (req: Request, res: Response): Promise<void> => {
-  const { owner, repo } = req.body;
+  const { owner, repo, userId, userLogin } = req.body;
   if (!owner || !repo) {
     res.status(400).json({ error: "Owner and repo are required fields" });
     return;
@@ -116,10 +135,24 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
         .values({
           owner: String(owner),
           repo: String(repo),
+          userId: userId ? String(userId) : null,
+          userLogin: userLogin ? String(userLogin) : null,
           status: "pending",
         })
         .returning();
       repoRecord = inserted;
+    } else if ((userId || userLogin) && (!repoRecord.userId || !repoRecord.userLogin)) {
+      // Backfill user ownership if connecting an existing unassigned repo
+      const [updated] = await db
+        .update(schema.repositories)
+        .set({
+          userId: userId ? String(userId) : repoRecord.userId,
+          userLogin: userLogin ? String(userLogin) : repoRecord.userLogin,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.repositories.id, repoRecord.id))
+        .returning();
+      if (updated) repoRecord = updated;
     }
 
     // Trigger indexer task asynchronously

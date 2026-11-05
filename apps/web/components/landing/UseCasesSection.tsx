@@ -83,7 +83,7 @@ const USE_CASE_DATA: Record<string, UseCaseData> = {
       {
         step: "03",
         name: "Trigger RCA Reasoning",
-        detail: "Runs HyDE + Reciprocal Rank Fusion + gpt-4o structured reasoning.",
+        detail: "Runs HyDE + Reciprocal Rank Fusion + GPT-6 Luna structured reasoning.",
         output: "generated: RCA report + diff + unit tests in 3.1s",
       },
       {

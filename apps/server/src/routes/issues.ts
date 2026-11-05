@@ -164,7 +164,8 @@ router.post("/:owner/:repo/:number/run", async (req: Request, res: Response): Pr
     });
 
     // 7. Initialize and execute Investigation Agent
-    const agent = new InvestigationAgent(process.env.OPENAI_API_KEY, "gpt-4o", 8);
+    const model = process.env.OPENAI_MODEL || "gpt-6-luna";
+    const agent = new InvestigationAgent(process.env.OPENAI_API_KEY, model, 8);
 
     const rca = await agent.investigate({
       issueTitle: issue.title,

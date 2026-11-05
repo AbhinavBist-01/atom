@@ -109,8 +109,9 @@ export async function generateHydeDocument(
 
   try {
     const openai = new OpenAI({ apiKey: key });
+    const model = process.env.OPENAI_HYDE_MODEL || process.env.OPENAI_MODEL || "gpt-6-luna";
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model,
       messages: [
         {
           role: "system",

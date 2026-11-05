@@ -80,7 +80,7 @@ Codebase Context Chunks:
 ${contextFormatted || "No code chunks retrieved."}`;
 
   const response = await openai.chat.completions.create({
-    model: input.model || "gpt-4o",
+    model: input.model || process.env.OPENAI_MODEL || "gpt-6-luna",
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt }

@@ -10,6 +10,8 @@ import {
 
 export const repositories = pgTable("repositories", {
   id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id"),
+  userLogin: text("user_login"),
   owner: text("owner").notNull(),
   repo: text("repo").notNull(),
   installationId: text("installation_id"),

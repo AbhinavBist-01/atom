@@ -87,10 +87,14 @@ export default function WorkspacePage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const fetchConnectedRepos = async () => {
+  const fetchConnectedRepos = async (overrideLogin?: string) => {
     try {
       setLoadingRepos(true);
-      const res = await fetch(`${SERVER_URL}/api/repos`);
+      const userHandle = (overrideLogin || resolvedUsername || customHandle || session?.user?.name || "").trim();
+      const url = userHandle
+        ? `${SERVER_URL}/api/repos?userLogin=${encodeURIComponent(userHandle)}`
+        : `${SERVER_URL}/api/repos`;
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setRepos(data.repos || []);
@@ -121,6 +125,7 @@ export default function WorkspacePage() {
         if (data.resolvedLogin) {
           setResolvedUsername(data.resolvedLogin);
           if (!customHandle) setCustomHandle(data.resolvedLogin);
+          fetchConnectedRepos(data.resolvedLogin);
         }
       }
     } catch (err) {
@@ -185,10 +190,16 @@ export default function WorkspacePage() {
     setIsDropdownOpen(false);
 
     try {
+      const activeLogin = (resolvedUsername || customHandle || session?.user?.name || finalOwner).trim();
       const res = await fetch(`${SERVER_URL}/api/repos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ owner: finalOwner, repo: finalRepo }),
+        body: JSON.stringify({
+          owner: finalOwner,
+          repo: finalRepo,
+          userId: session?.user?.id || undefined,
+          userLogin: activeLogin || undefined,
+        }),
       });
 
       if (!res.ok) {
@@ -197,7 +208,7 @@ export default function WorkspacePage() {
       }
 
       setSearchQuery("");
-      await fetchConnectedRepos();
+      await fetchConnectedRepos(activeLogin);
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to connect repository");
     } finally {
