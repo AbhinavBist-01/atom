@@ -94,6 +94,101 @@ export const TestExecutionResultSchema = z.object({
 });
 export type TestExecutionResult = z.infer<typeof TestExecutionResultSchema>;
 
+export const VerificationStatusEnum = z.enum([
+  "passed",
+  "failed",
+  "inconclusive",
+  "skipped",
+  "not_configured",
+]);
+export type VerificationStatus = z.infer<typeof VerificationStatusEnum>;
+
+export const VerificationStageNameEnum = z.enum([
+  "patch_apply",
+  "build",
+  "lint",
+  "typecheck",
+  "unit_tests",
+  "integration_tests",
+  "regression_tests",
+  "security_checks",
+]);
+export type VerificationStageName = z.infer<typeof VerificationStageNameEnum>;
+
+export const VerificationStageSchema = z.object({
+  name: VerificationStageNameEnum,
+  status: VerificationStatusEnum,
+  command: z.string().optional(),
+  durationMs: z.number().default(0),
+  stdout: z.string().default(""),
+  stderr: z.string().default(""),
+  exitCode: z.number().int().default(0),
+  failureReason: z.string().optional(),
+  details: z.record(z.any()).optional(),
+});
+export type VerificationStage = z.infer<typeof VerificationStageSchema>;
+
+export const SecurityCheckResultSchema = z.object({
+  passed: z.boolean(),
+  secretsFound: z.array(z.string()).default([]),
+  dangerousPatterns: z.array(z.string()).default([]),
+  blockedFiles: z.array(z.string()).default([]),
+  summary: z.string(),
+});
+export type SecurityCheckResult = z.infer<typeof SecurityCheckResultSchema>;
+
+export const RepoToolchainSchema = z.object({
+  language: z.enum([
+    "typescript",
+    "javascript",
+    "python",
+    "java",
+    "cpp",
+    "unknown",
+  ]),
+  packageManager: z.enum([
+    "npm",
+    "pnpm",
+    "yarn",
+    "pip",
+    "poetry",
+    "maven",
+    "gradle",
+    "cmake",
+    "make",
+    "none",
+  ]),
+  buildCommand: z.string().optional(),
+  testCommand: z.string().optional(),
+  lintCommand: z.string().optional(),
+  typecheckCommand: z.string().optional(),
+  detectedFiles: z.array(z.string()).default([]),
+});
+export type RepoToolchain = z.infer<typeof RepoToolchainSchema>;
+
+export const VerificationReportSchema = z.object({
+  taskId: z.string(),
+  runId: z.string(),
+  repoRef: z.string(),
+  prEligible: z.boolean(),
+  humanApprovalRequired: z.boolean().default(true),
+  repairAttempts: z.number().int().default(0),
+  stages: z.array(VerificationStageSchema),
+  toolchain: RepoToolchainSchema.optional(),
+  security: SecurityCheckResultSchema.optional(),
+  regressionTest: z
+    .object({
+      testFile: z.string(),
+      baselineFailedAsExpected: z.boolean(),
+      postPatchPassed: z.boolean(),
+      code: z.string(),
+    })
+    .optional(),
+  summary: z.string(),
+  createdAt: z.string(),
+});
+export type VerificationReport = z.infer<typeof VerificationReportSchema>;
+
 export const RcaResultSchema = z.object({
   rootCause: z.string(),
   confidence: z.enum(["low", "medium", "high"]),
@@ -103,9 +198,9 @@ export const RcaResultSchema = z.object({
   hypotheses: z.array(HypothesisSchema).optional(),
   patchPlan: PatchPlanSchema.optional(),
   testExecution: TestExecutionResultSchema.optional(),
+  verificationReport: VerificationReportSchema.optional(),
   isInconclusive: z.boolean().optional(),
 });
 
 export type Citation = z.infer<typeof CitationSchema>;
 export type RcaResult = z.infer<typeof RcaResultSchema>;
-
